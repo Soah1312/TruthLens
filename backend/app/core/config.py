@@ -18,14 +18,20 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
+    # Model and Inference Configuration (Phase 2)
+    MODEL_SOURCE: str = "local"  # 'local' or 'huggingface'
+    LOCAL_MODEL_PATH: str = "models/distilbert-liar"
+    HF_MODEL_REPO: str = "your-username/truthlens-distilbert-liar"
+    METRICS_FILE_PATH: str = "models/distilbert-liar/metrics.json"
+    MAX_INPUT_LENGTH: int = 5000
+    MIN_INPUT_LENGTH: int = 3
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
-            # Parse comma-separated string or bracketed list if given as string
             v = v.strip()
             if v.startswith("[") and v.endswith("]"):
-                # Clean simple json-like bracketed list
                 items = [item.strip(" \"'") for item in v[1:-1].split(",") if item.strip()]
                 return items
             return [origin.strip() for origin in v.split(",") if origin.strip()]

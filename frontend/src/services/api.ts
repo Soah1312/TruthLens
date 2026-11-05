@@ -1,4 +1,4 @@
-import { HealthResponse } from '../types';
+import { HealthResponse, ModelMetricsResponse } from '../types';
 
 // Read API base URL from Vite environment variable with safe fallback
 const API_BASE_URL: string =
@@ -16,7 +16,6 @@ function buildUrl(endpoint: string): string {
 export const apiService = {
   /**
    * Fetches backend application health status.
-   * Throws an error if the network request fails or server returns a non-200 status code.
    */
   async getHealth(): Promise<HealthResponse> {
     const url = buildUrl('/api/health');
@@ -32,6 +31,26 @@ export const apiService = {
     }
 
     const data: HealthResponse = await response.json();
+    return data;
+  },
+
+  /**
+   * Fetches trained model evaluation benchmark metrics.
+   */
+  async getModelMetrics(): Promise<ModelMetricsResponse> {
+    const url = buildUrl('/api/model/metrics');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch model metrics: ${response.status} ${response.statusText}`);
+    }
+
+    const data: ModelMetricsResponse = await response.json();
     return data;
   },
 

@@ -9,6 +9,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.api.routes.health import router as health_router
+from app.api.routes.predict import router as predict_router
+from app.api.routes.metrics import router as metrics_router
 from app.core.config import settings
 from app.database.database import engine
 
@@ -28,7 +30,7 @@ async def lifespan(app: FastAPI):
     """
     logger.info("Starting up %s v%s...", settings.PROJECT_NAME, settings.VERSION)
     try:
-        # Verify database connection without creating unnecessary tables in Phase 1
+        # Verify database connection without creating unnecessary tables in Phase 1/2
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         logger.info("SQLite database connection established successfully at: %s", settings.DATABASE_URL)
@@ -85,10 +87,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """Handle Pydantic request validation errors."""
     logger.warning("Validation error on %s: %s", request.url.path, exc.errors())
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=422,
         content={
             "error": "ValidationError",
-            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "status_code": 422,
             "detail": exc.errors(),
         },
     )
@@ -123,11 +125,18 @@ async def root() -> Dict[str, Any]:
         "status": "online",
         "documentation": "/docs",
         "health": "/api/health",
+        "endpoints": {
+            "health": "/api/health",
+            "predict": "/api/predict",
+            "model_metrics": "/api/model/metrics",
+        },
     }
 
 
 # Include Routers
 app.include_router(health_router, prefix="/api")
+app.include_router(predict_router, prefix="/api")
+app.include_router(metrics_router, prefix="/api")
 
 
 if __name__ == "__main__":

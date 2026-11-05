@@ -4,7 +4,8 @@
 [![React](https://img.shields.io/badge/Frontend-React_18_%2B_Vite-61DAFB.svg?style=flat&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5-3178C6.svg?style=flat&logo=typescript)](https://www.typescriptlang.org)
 [![Python](https://img.shields.io/badge/Language-Python_3.10%2F3.11-3776AB.svg?style=flat&logo=python)](https://www.python.org)
-[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS_3-38B2AC.svg?style=flat&logo=tailwind-css)](https://tailwindcss.com)
+[![Transformers](https://img.shields.io/badge/Model-DistilBERT-FF6F00.svg?style=flat&logo=huggingface)](https://huggingface.co/distilbert-base-uncased)
+[![Colab GPU](https://img.shields.io/badge/Training-Google_Colab_GPU-F9AB00.svg?style=flat&logo=googlecolab)](https://colab.research.google.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -31,10 +32,11 @@ The rapid proliferation of digital misinformation presents a major threat to dem
 
 ## 3. Project Objectives
 
-- **Develop a High-Accuracy NLP Classifier**: Fine-tune a lightweight transformer architecture (`distilbert-base-uncased`) on the benchmark LIAR dataset for multi-class and binary credibility scoring.
-- **Provide Real-Time Fact Grounding**: Integrate automated article extraction (Trafilatura) and live web evidence retrieval (Tavily API) to accompany every prediction with corroborating sources.
-- **Empirically Benchmark Model Robustness**: Subject the model to targeted adversarial perturbations (typos, synonym replacement, paraphrasing, negation injection) to quantify prediction consistency and degradation.
-- **Deliver an Omnichannel User Experience**: Provide an accessible Telegram intake bot for everyday readers alongside a professional research dashboard for evaluating model performance and robustness.
+- **Develop a High-Accuracy NLP Classifier**: Fine-tune a lightweight transformer architecture (`distilbert-base-uncased`) on the benchmark LIAR dataset for multi-class credibility scoring across 6 truthfulness levels (`pants-fire`, `false`, `barely-true`, `half-true`, `mostly-true`, `true`).
+- **Leverage Cloud GPU Acceleration**: Execute all compute-intensive model training on Google Colab GPU (T4), producing portable model weights and evaluation artifacts.
+- **Provide Real-Time Fact Grounding**: Integrate automated article extraction (Trafilatura) and live web evidence retrieval (Tavily API) in subsequent phases to accompany predictions with corroborating sources.
+- **Empirically Benchmark Model Robustness**: Subject the model to targeted adversarial perturbations (typos, synonym replacement, paraphrasing, negation injection) in Phase 4 to quantify prediction consistency.
+- **Deliver an Omnichannel User Experience**: Provide an accessible Telegram intake bot alongside a professional research dashboard for evaluating model performance and robustness.
 
 ---
 
@@ -42,7 +44,7 @@ The rapid proliferation of digital misinformation presents a major threat to dem
 
 ### Backend
 - **Language**: Python 3.10 / 3.11
-- **API Framework**: FastAPI (High-performance ASGI framework)
+- **API Framework**: FastAPI
 - **ASGI Server**: Uvicorn
 - **Data Validation & Settings**: Pydantic v2 & Pydantic-Settings
 - **ORM & Database**: SQLAlchemy 2.0 with SQLite (for initial development)
@@ -53,27 +55,19 @@ The rapid proliferation of digital misinformation presents a major threat to dem
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS (Tailored dark theme)
 - **Icons**: Lucide React
-- **Data Visualization (Future)**: Recharts
+- **Data Visualization**: Recharts
 
-### Machine Learning & Data (Future Phases)
+### Machine Learning & Data (Phase 2)
 - **Framework**: PyTorch
 - **Transformers**: Hugging Face Transformers (`distilbert-base-uncased`)
-- **Evaluation**: Scikit-Learn (Precision, Recall, Macro F1, Confusion Matrix)
-- **Dataset**: LIAR benchmark dataset
-
-### External Integrations (Future Phases)
-- **Telegram Bot**: `python-telegram-bot`
-- **Article Extraction**: Trafilatura
-- **Web Evidence Search**: Tavily API
-
-### Target Deployment (Future Phases)
-- **Backend**: Render
-- **Frontend**: Vercel
-- **Version Control**: GitHub
+- **Evaluation**: Scikit-Learn (Accuracy, Macro Precision, Macro Recall, Macro F1, Weighted F1, Confusion Matrix)
+- **Dataset**: LIAR benchmark dataset (William Yang Wang, ACL 2017)
+- **Training Environment**: Google Colab GPU (T4 accelerator)
+- **Model Hosting & Distribution**: Hugging Face Hub / Local ZIP export
 
 ---
 
-## 5. Project Architecture & Directory Structure
+## 5. Project Directory Structure
 
 ```
 truthlens/
@@ -82,18 +76,24 @@ truthlens/
 │   ├── app/
 │   │   ├── api/
 │   │   │   └── routes/
-│   │   │       └── health.py          # GET /api/health endpoint
+│   │   │       ├── health.py          # GET /api/health (System health)
+│   │   │       ├── predict.py         # POST /api/predict (6-class claim inference)
+│   │   │       └── metrics.py         # GET /api/model/metrics (Colab benchmark metrics)
 │   │   ├── core/
 │   │   │   └── config.py              # Pydantic v2 environment settings
 │   │   ├── database/
 │   │   │   └── database.py            # SQLAlchemy SQLite connection setup
-│   │   ├── services/                  # Business logic (intake, inference)
-│   │   ├── schemas/                   # Pydantic data transfer schemas
-│   │   │   └── health.py              # Health response contract schema
+│   │   ├── services/
+│   │   │   └── classifier.py          # Singleton DistilBERT inference service
+│   │   ├── schemas/
+│   │   │   ├── health.py              # Health response contract
+│   │   │   ├── predict.py             # Prediction request/response schemas
+│   │   │   └── metrics.py             # Evaluation metrics response schema
 │   │   └── main.py                    # FastAPI application initialization & CORS
 │   ├── tests/
-│   │   └── test_health.py             # Pytest test suite for health & discovery
-│   ├── requirements.txt               # Phase 1 backend dependencies
+│   │   ├── test_health.py             # Phase 1 health check tests
+│   │   └── test_phase2.py             # Phase 2 inference, validation & metrics tests
+│   ├── requirements.txt               # Backend dependencies
 │   ├── .env.example                   # Backend environment template
 │   └── .env                           # Local environment config (ignored)
 │
@@ -101,17 +101,17 @@ truthlens/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── layout/
-│   │   │   │   ├── Sidebar.tsx        # Navigation sidebar with future placeholders
+│   │   │   │   ├── Sidebar.tsx        # Navigation sidebar with Phase status badges
 │   │   │   │   └── Header.tsx         # System status header & health badge
 │   │   │   ├── dashboard/
-│   │   │   │   ├── SummaryCards.tsx   # 4 cards displaying "Not available yet"
-│   │   │   │   ├── RecentAnalysis.tsx # Empty state with required prompt
-│   │   │   │   ├── ModelPerformance.tsx # Unpopulated metric containers
+│   │   │   │   ├── SummaryCards.tsx   # 4 metric cards ("Not available yet")
+│   │   │   │   ├── RecentAnalysis.tsx # Empty state prompting Telegram intake
+│   │   │   │   ├── ModelPerformance.tsx # Live metrics synced from /api/model/metrics
 │   │   │   │   └── RobustnessEvaluation.tsx # Robustness evaluation placeholders
 │   │   │   └── common/
 │   │   │       └── StatusBadge.tsx    # Live backend connection indicator
 │   │   ├── pages/
-│   │   │   └── DashboardPage.tsx      # Main dashboard view assembling sections
+│   │   │   └── DashboardPage.tsx      # Main dashboard view
 │   │   ├── services/
 │   │   │   └── api.ts                 # Central API service client
 │   │   ├── hooks/
@@ -121,173 +121,81 @@ truthlens/
 │   │   ├── App.tsx                    # Root application container
 │   │   ├── main.tsx                   # React DOM entry point
 │   │   └── index.css                  # Tailwind styles and custom dark theme
-│   ├── public/
-│   ├── index.html                     # HTML5 entry with Inter & JetBrains Mono
 │   ├── package.json                   # Frontend dependencies and scripts
-│   ├── tsconfig.json                  # TypeScript compiler settings
 │   ├── tailwind.config.js             # Tailwind CSS tokens
 │   ├── vite.config.ts                 # Vite bundler configuration
 │   └── .env.example                   # Frontend environment template
 │
-├── bot/
-│   └── README.md                      # Phase 3 Telegram bot documentation
-│
 ├── training/
-│   └── README.md                      # Phase 2 model training documentation
-│
-├── robustness/
-│   └── README.md                      # Phase 4 robustness evaluation suite
+│   ├── TruthLens_Phase2_Colab.ipynb   # Complete 10-section Google Colab training notebook
+│   ├── preprocess.py                  # LIAR dataset loading & split validation
+│   ├── baseline.py                    # TF-IDF + Logistic Regression benchmark
+│   ├── train.py                       # Standalone PyTorch DistilBERT fine-tuning
+│   ├── evaluate.py                    # Standalone checkpoint benchmarking suite
+│   └── README.md                      # Detailed Phase 2 Colab training instructions
 │
 ├── datasets/
-│   └── .gitkeep                       # Destination for LIAR dataset in Phase 2
+│   └── liar/
+│       ├── train.tsv                  # 10,240 training statements
+│       ├── valid.tsv                  # 1,284 validation statements
+│       └── test.tsv                   # 1,267 test statements
 │
 ├── models/
-│   └── .gitkeep                       # Destination for fine-tuned weights in Phase 2
+│   └── .gitkeep                       # Destination for trained model artifacts
 │
 ├── docs/
-│   └── ARCHITECTURE.md                # Comprehensive architectural design document
+│   └── ARCHITECTURE.md                # System architecture documentation
 │
 ├── .gitignore                         # Project-wide Git ignore rules
-└── README.md                          # Project documentation (this file)
+└── README.md                          # Project documentation
 ```
 
 ---
 
-## 6. Local Installation & Startup Instructions
+## 6. Training Pipeline (Google Colab)
 
-### Prerequisites
-- **Python**: 3.10 or 3.11 installed
-- **Node.js**: v18+ or v20+ with `npm`
+To execute the DistilBERT training pipeline:
+1. Open [Google Colab](https://colab.research.google.com/).
+2. Upload [`training/TruthLens_Phase2_Colab.ipynb`](file:///c:/Users/soahf/Desktop/NLP_NEWS/training/TruthLens_Phase2_Colab.ipynb).
+3. Set runtime to **GPU** (`T4 GPU`).
+4. Run all cells:
+   - Evaluates TF-IDF + Logistic Regression baseline on LIAR test set.
+   - Fine-tunes `distilbert-base-uncased` across 3 epochs (batch size 16, lr 2e-5, AdamW).
+   - Generates confusion matrix and learning curves.
+   - Exports `truthlens-distilbert-liar.zip` containing weights, tokenizer, and `metrics.json`.
+   - Optionally uploads model to your Hugging Face account.
 
 ---
+
+## 7. Local Installation & Startup Instructions
 
 ### Backend Setup
-
-1. **Navigate to the backend directory**:
-   ```bash
-   cd backend
-   ```
-
-2. **Create and activate a virtual environment**:
-   - On Windows (PowerShell):
-     ```powershell
-     python -m venv venv
-     .\venv\Scripts\Activate.ps1
-     ```
-   - On Linux / macOS:
-     ```bash
-     python3 -m venv venv
-     source venv/bin/activate
-     ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment variables**:
-   ```bash
-   cp .env.example .env
-   ```
-
-5. **Run the backend test suite**:
-   ```bash
-   pytest -v tests
-   ```
-
-6. **Start the FastAPI backend**:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-   *Alternative command directly from backend directory:*
-   ```bash
-   uvicorn app.main --reload --port 8000
-   ```
-
-7. **Verify backend endpoints**:
-   - Root discovery: [http://localhost:8000/](http://localhost:8000/)
-   - Health check: [http://localhost:8000/api/health](http://localhost:8000/api/health)
-   - Interactive Swagger docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --port 8000
+```
+- API Root: [http://localhost:8000/](http://localhost:8000/)
+- Health Check: [http://localhost:8000/api/health](http://localhost:8000/api/health)
+- Swagger Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Model Metrics: [http://localhost:8000/api/model/metrics](http://localhost:8000/api/model/metrics)
+- Claim Prediction: `POST http://localhost:8000/api/predict`
 
 ### Frontend Setup
-
-1. **Open a new terminal and navigate to the frontend directory**:
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**:
-   ```bash
-   cp .env.example .env
-   ```
-   *(Ensure `VITE_API_BASE_URL=http://localhost:8000` is present)*
-
-4. **Start the Vite development server**:
-   ```bash
-   npm run dev
-   ```
-
-5. **Access the dashboard**:
-   - Open your browser at [http://localhost:5173/](http://localhost:5173/)
-   - Confirm that the top navigation header displays **"Backend Connected"** with a green pulse indicator.
+```powershell
+cd frontend
+npm run dev
+```
+- Dashboard: [http://localhost:5173/](http://localhost:5173/)
 
 ---
 
-## 7. Current Development Status
+## 8. Current Development Status
 
-| Component | Status | Notes |
-|:---|:---:|:---|
-| **Phase 1: Foundation & Health** | **COMPLETED** | FastAPI backend, SQLite initialization, React dashboard skeleton, live health monitoring |
-| **Phase 2: DistilBERT Model** | *Upcoming* | LIAR dataset processing, PyTorch training, evaluation pipeline |
-| **Phase 3: Bot & Web Evidence** | *Upcoming* | python-telegram-bot, Trafilatura extraction, Tavily API search |
-| **Phase 4: Robustness Suite** | *Upcoming* | Adversarial perturbation generator and consistency evaluation |
-| **Phase 5: Analytics & Deploy** | *Upcoming* | Interactive Recharts dashboard, Render backend, Vercel frontend |
-
----
-
-## 8. Five Project Development Phases
-
-### Phase 1: Foundation, Health Monitoring & Dashboard Skeleton (Current)
-- Establish canonical project architecture and directory layout.
-- Implement FastAPI application with `/api/health`, `/docs`, CORS, and SQLite connectivity.
-- Build modern React + TypeScript + Tailwind CSS dark SaaS dashboard skeleton.
-- Connect frontend health polling to backend API with graceful disconnection handling.
-- Author system architecture and baseline testing specifications.
-
-### Phase 2: NLP Model Fine-Tuning & Evaluation Pipeline
-- Ingest and preprocess the LIAR dataset.
-- Fine-tune `distilbert-base-uncased` using PyTorch and Hugging Face `transformers`.
-- Implement evaluation pipeline for Accuracy, Precision, Recall, and Macro F1-score.
-- Export trained model weights to `/models/` and build backend inference routes.
-
-### Phase 3: Article Intake, Telegram Bot & Web Evidence Retrieval
-- Build asynchronous Telegram bot via `python-telegram-bot` accepting text and article URLs.
-- Integrate Trafilatura for automated web page body extraction.
-- Implement Tavily Search API client for retrieving real-time fact-checking evidence.
-- Store submissions, verdicts, and evidence records in SQLite database.
-
-### Phase 4: Adversarial Perturbation & Robustness Evaluation Suite
-- Implement text perturbation suite: typographical noise, synonym substitution, paraphrasing, negation insertion.
-- Benchmark fine-tuned DistilBERT performance degradation under adversarial input.
-- Compute Prediction Consistency Scores and invariance rates across perturbation categories.
-
-### Phase 5: Web Dashboard Analytics, Visualizations & Deployment
-- Populate frontend dashboard with live data feeds and Recharts interactive graphs.
-- Deploy FastAPI backend to Render.
-- Deploy React frontend to Vercel.
-- Conduct end-to-end integration and demonstration testing for academic review.
-
----
-
-## 9. Academic Review & Viva Notes
-
-- **Separation of Concerns**: Intake, classification, evidence synthesis, and presentation layers operate independently to allow modular testing.
-- **Reproducibility**: All configurations are externalized into environment variables; random seeds will be fixed during Phase 2 training.
-- **Zero Hallucination Policy**: Phase 1 explicitly avoids fabricated model metrics or hardcoded fake news outputs. All metric cards display "Not available yet" until true model evaluation is conducted.
+| Phase | Milestone | Status |
+|:---|:---|:---:|
+| **Phase 1** | Foundation, Health Monitoring & Dashboard Skeleton | **COMPLETED** |
+| **Phase 2** | DistilBERT Colab Pipeline, LIAR Dataset & Inference API | **CODE PREPARED** (Awaiting Colab Run) |
+| **Phase 3** | Telegram Bot, Trafilatura Extraction & Tavily Web Search | *Upcoming* |
+| **Phase 4** | Textual Perturbations & Adversarial Robustness Suite | *Upcoming* |
+| **Phase 5** | Analytics Dashboard & Cloud Deployment | *Upcoming* |
