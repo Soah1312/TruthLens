@@ -46,15 +46,29 @@ async def predict_claim(request: PredictRequest) -> PredictResponse:
         )
 
     try:
-        result = classifier_service.predict(cleaned_text)
-        return PredictResponse(**result)
+        raw = classifier_service.predict(cleaned_text)
+        if isinstance(raw.get("prediction"), dict):
+            pred_label = raw["prediction"]["label"]
+            confidence = raw["prediction"]["confidence"]
+            probabilities = raw["prediction"]["class_scores"]
+        else:
+            pred_label = raw.get("prediction", "unknown")
+            confidence = raw.get("confidence", 0.0)
+            probabilities = raw.get("probabilities", {})
+
+        return PredictResponse(
+            prediction=pred_label,
+            confidence=confidence,
+            probabilities=probabilities,
+            model=raw.get("model", "RoBERTa + Metadata"),
+            disclaimer=raw.get("disclaimer", "This is a model prediction, not a verified fact-check."),
+        )
     except ModelNotAvailableError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
-                f"DistilBERT model is not available for inference: {str(exc)} "
-                "Execute the training notebook in Google Colab, download the model, and place it in 'models/distilbert-liar', "
-                "or upload to Hugging Face and configure HF_MODEL_REPO in .env."
+                f"RoBERTa model is not available for inference: {str(exc)}. "
+                "Verify HF_TOKEN and HF_MODEL_REPO settings."
             ),
         )
     except Exception as exc:

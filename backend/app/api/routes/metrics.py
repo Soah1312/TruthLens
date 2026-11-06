@@ -50,11 +50,11 @@ async def get_model_metrics() -> ModelMetricsResponse:
         with open(metrics_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        test_m = data.get("test_metrics", {})
+        test_m = data.get("test_metrics_6class") or data.get("test_metrics", {})
         return ModelMetricsResponse(
             status="available",
             message="Evaluation metrics loaded successfully from training artifacts.",
-            model_name=data.get("model_name", "distilbert-base-uncased (Fine-Tuned)"),
+            model_name=data.get("model_name", "roberta-base (Metadata + Label Smoothing)"),
             accuracy=test_m.get("accuracy"),
             macro_precision=test_m.get("macro_precision"),
             macro_recall=test_m.get("macro_recall"),

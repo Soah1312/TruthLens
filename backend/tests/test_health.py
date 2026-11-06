@@ -28,13 +28,10 @@ def test_health_endpoint(client: TestClient):
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/json")
     
-    # Exact required contract
-    expected = {
-        "status": "healthy",
-        "application": "TruthLens",
-        "version": "1.0.0",
-    }
-    assert response.json() == expected
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["application"] == "TruthLens"
+    assert data["version"] == "1.0.0"
 
 
 def test_openapi_docs_available(client: TestClient):

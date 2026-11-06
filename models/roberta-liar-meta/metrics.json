@@ -1,0 +1,131 @@
+{
+  "model_name": "roberta-base (Metadata + Label Smoothing)",
+  "model_identifier": "roberta-liar-meta",
+  "experiment": "Experiment 3 - RoBERTa + Metadata + Label Smoothing",
+  "num_classes": 6,
+  "labels": [
+    "pants-fire",
+    "false",
+    "barely-true",
+    "half-true",
+    "mostly-true",
+    "true"
+  ],
+  "label2id": {
+    "pants-fire": 0,
+    "false": 1,
+    "barely-true": 2,
+    "half-true": 3,
+    "mostly-true": 4,
+    "true": 5
+  },
+  "id2label": {
+    "0": "pants-fire",
+    "1": "false",
+    "2": "barely-true",
+    "3": "half-true",
+    "4": "mostly-true",
+    "5": "true"
+  },
+  "evaluation_date": "2026-11-06 02:31:17 UTC",
+  "hardware": {
+    "device": "cuda",
+    "gpu_name": "Tesla T4",
+    "training_duration_seconds": 642.09
+  },
+  "hyperparameters": {
+    "model_architecture": "roberta-base",
+    "learning_rate": 2e-05,
+    "batch_size_train": 16,
+    "batch_size_eval": 32,
+    "epochs": 4,
+    "max_sequence_length": 160,
+    "weight_decay": 0.01,
+    "optimizer": "AdamW",
+    "scheduler": "linear_warmup_decay",
+    "warmup_ratio": 0.1,
+    "gradient_clipping": 1.0,
+    "seed": 42,
+    "label_smoothing": 0.1,
+    "class_weights": "Disabled",
+    "input_features": "statement + metadata (Speaker, Context) sentence-pair",
+    "dynamic_padding": true
+  },
+  "best_validation_macro_f1": 0.3062,
+  "test_metrics_6class": {
+    "accuracy": 0.2841,
+    "macro_precision": 0.2995,
+    "macro_recall": 0.2817,
+    "macro_f1": 0.2839,
+    "weighted_f1": 0.2793
+  },
+  "test_metrics_binary": {
+    "accuracy": 0.6582,
+    "precision": 0.6776,
+    "recall": 0.7507,
+    "f1": 0.7123
+  },
+  "test_metrics_3class": {
+    "accuracy": 0.4886,
+    "macro_precision": 0.483,
+    "macro_recall": 0.4881,
+    "macro_f1": 0.483,
+    "weighted_f1": 0.4841
+  },
+  "baseline_metrics": {
+    "model": "TF-IDF + Logistic Regression",
+    "accuracy": 0.2218,
+    "macro_f1": 0.2195,
+    "weighted_f1": 0.2223
+  },
+  "previous_experiments": {
+    "experiment_1_distilbert_original": {
+      "accuracy": 0.2889,
+      "macro_f1": 0.2752,
+      "weighted_f1": 0.2854
+    },
+    "experiment_2_distilbert_weighted": {
+      "accuracy": 0.266,
+      "macro_f1": 0.2638,
+      "weighted_f1": 0.2568
+    }
+  },
+  "per_class_metrics": {
+    "pants-fire": {
+      "precision": 0.4364,
+      "recall": 0.2609,
+      "f1": 0.3265,
+      "support": 92
+    },
+    "false": {
+      "precision": 0.2897,
+      "recall": 0.3373,
+      "f1": 0.3117,
+      "support": 249
+    },
+    "barely-true": {
+      "precision": 0.229,
+      "recall": 0.1415,
+      "f1": 0.1749,
+      "support": 212
+    },
+    "half-true": {
+      "precision": 0.27,
+      "recall": 0.2679,
+      "f1": 0.2689,
+      "support": 265
+    },
+    "mostly-true": {
+      "precision": 0.25,
+      "recall": 0.2739,
+      "f1": 0.2614,
+      "support": 241
+    },
+    "true": {
+      "precision": 0.322,
+      "recall": 0.4087,
+      "f1": 0.3602,
+      "support": 208
+    }
+  }
+}

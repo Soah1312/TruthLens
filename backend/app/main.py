@@ -10,9 +10,11 @@ from sqlalchemy import text
 
 from app.api.routes.health import router as health_router
 from app.api.routes.predict import router as predict_router
+from app.api.routes.analyze import router as analyze_router
 from app.api.routes.metrics import router as metrics_router
 from app.core.config import settings
 from app.database.database import engine
+from app.services.classifier import classifier_service
 
 # Configure logging for academic and production traceability
 logging.basicConfig(
@@ -26,7 +28,7 @@ logger = logging.getLogger("truthlens.backend")
 async def lifespan(app: FastAPI):
     """
     Application lifespan manager.
-    Handles startup checks (database connectivity) and graceful shutdown procedures.
+    Handles startup checks (database connectivity, model pre-warming) and graceful shutdown procedures.
     """
     logger.info("Starting up %s v%s...", settings.PROJECT_NAME, settings.VERSION)
     try:
@@ -37,6 +39,23 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.error("Database connection failed during startup: %s", exc)
         raise exc
+
+    # Pre-warm RoBERTa neural model once during application startup
+    try:
+        logger.info(
+            "Pre-loading %s model from source [%s]: %s...",
+            classifier_service.model_identifier,
+            settings.MODEL_SOURCE,
+            settings.HF_MODEL_REPO,
+        )
+        classifier_service.load_model()
+        logger.info("Model pre-load complete on device: %s", classifier_service.device)
+    except Exception as exc:
+        logger.warning(
+            "Model pre-load at startup deferred or failed: %s. "
+            "Backend will remain online; model will re-attempt when requested or when credentials are provided.",
+            exc,
+        )
 
     yield
 
@@ -128,6 +147,7 @@ async def root() -> Dict[str, Any]:
         "endpoints": {
             "health": "/api/health",
             "predict": "/api/predict",
+            "analyze": "/api/analyze",
             "model_metrics": "/api/model/metrics",
         },
     }
@@ -136,6 +156,7 @@ async def root() -> Dict[str, Any]:
 # Include Routers
 app.include_router(health_router, prefix="/api")
 app.include_router(predict_router, prefix="/api")
+app.include_router(analyze_router, prefix="/api")
 app.include_router(metrics_router, prefix="/api")
 
 

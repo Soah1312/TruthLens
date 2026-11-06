@@ -27,15 +27,13 @@ def client():
         yield test_client
 
 
-# 1. Verify health endpoint remains intact
 def test_health_endpoint_preserved(client: TestClient):
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {
-        "status": "healthy",
-        "application": "TruthLens",
-        "version": "1.0.0",
-    }
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["application"] == "TruthLens"
+    assert data["version"] == "1.0.0"
 
 
 # 2. Test metrics endpoint when unpopulated

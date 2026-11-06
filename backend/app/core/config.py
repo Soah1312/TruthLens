@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,11 +18,12 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
-    # Model and Inference Configuration (Phase 2)
-    MODEL_SOURCE: str = "local"  # 'local' or 'huggingface'
-    LOCAL_MODEL_PATH: str = "models/distilbert-liar"
-    HF_MODEL_REPO: str = "your-username/truthlens-distilbert-liar"
-    METRICS_FILE_PATH: str = "models/distilbert-liar/metrics.json"
+    # Model and Inference Configuration
+    MODEL_SOURCE: str = "huggingface"  # 'huggingface' or 'local'
+    LOCAL_MODEL_PATH: str = "models/roberta-liar-meta"
+    HF_MODEL_REPO: str = "soah-13/truthlens-roberta-liar-meta"
+    HF_TOKEN: Optional[str] = None
+    METRICS_FILE_PATH: str = "models/roberta-liar-meta/metrics.json"
     MAX_INPUT_LENGTH: int = 5000
     MIN_INPUT_LENGTH: int = 3
 
@@ -38,7 +39,11 @@ class Settings(BaseSettings):
         return v
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[
+            ".env",
+            "backend/.env",
+            os.path.join(os.path.dirname(__file__), "..", "..", ".env"),
+        ],
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
