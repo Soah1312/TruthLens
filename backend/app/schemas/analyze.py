@@ -10,7 +10,16 @@ from pydantic import BaseModel, Field
 class ClaimMetadata(BaseModel):
     """
     Optional metadata accompanying the statement.
-    Reflects the exact fields used during RoBERTa model training.
+    Supports all six canonical metadata fields from the LIAR benchmark:
+    speaker, context, subject, state, party, job.
+
+    Note on RoBERTa Model Inference:
+    During Phase 2 fine-tuning, RoBERTa was trained strictly on the sentence-pair:
+        `Speaker: {speaker} | Context: {context}`
+    To preserve exact training fidelity and prevent out-of-distribution shifts,
+    the neural classifier formats speaker and context into the tokenized pair.
+    The remaining attributes (subject, state, party, job) are validated and preserved
+    for downstream context retrieval (Phase 3) and robustness perturbation (Phase 4).
     """
     speaker: Optional[str] = Field(
         None,

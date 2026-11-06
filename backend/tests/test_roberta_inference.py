@@ -185,6 +185,7 @@ def test_missing_metadata_formatting(mock_service):
     """
     Verifies that missing metadata explicitly defaults to 'unknown'
     and never fabricates speaker identities or political affiliations.
+    Also verifies consistent handling of all six LIAR metadata fields.
     """
     # 1. When metadata is None
     formatted_none = mock_service.format_metadata(None)
@@ -203,6 +204,35 @@ def test_missing_metadata_formatting(mock_service):
     # 4. When metadata is completely empty dict
     formatted_empty_dict = mock_service.format_metadata({})
     assert formatted_empty_dict == "Speaker: unknown | Context: unknown"
+
+    # 5. When all six metadata fields are provided
+    meta_all_six = ClaimMetadata(
+        speaker="Barack Obama",
+        context="State of the Union Address",
+        subject="economy",
+        state="Illinois",
+        party="democrat",
+        job="President"
+    )
+    formatted_all_six = mock_service.format_metadata(meta_all_six)
+    assert formatted_all_six == "Speaker: Barack Obama | Context: State of the Union Address"
+
+    # 6. When metadata has whitespace-only strings
+    meta_whitespace = ClaimMetadata(speaker="   ", context="   ")
+    formatted_whitespace = mock_service.format_metadata(meta_whitespace)
+    assert formatted_whitespace == "Speaker: unknown | Context: unknown"
+
+    # 7. When metadata is a dict with TitleCase keys and all six fields
+    dict_all_six = {
+        "Speaker": "Bernie Sanders",
+        "Context": "Town Hall",
+        "Subject": "healthcare",
+        "State": "Vermont",
+        "Party": "independent",
+        "Job": "Senator"
+    }
+    formatted_dict = mock_service.format_metadata(dict_all_six)
+    assert formatted_dict == "Speaker: Bernie Sanders | Context: Town Hall"
 
 
 # ==============================================================================

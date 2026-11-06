@@ -68,24 +68,42 @@ class RoBERTaInferenceService:
         """
         Formats statement metadata into the exact representation used during model training:
             'Speaker: {speaker} | Context: {context}'
-        
-        When metadata is omitted or unavailable, defaults to 'unknown' rather than
-        fabricating speaker identities or political affiliations.
+
+        Metadata Architecture & Six Canonical Fields:
+        The benchmark defines six metadata attributes:
+          1. speaker: Formatted into Sentence-Pair (`Speaker: {speaker}`)
+          2. context: Formatted into Sentence-Pair (`Context: {context}`)
+          3. subject: Validated & retained for Phase 3 evidence retrieval & Phase 4 robustness
+          4. state: Validated & retained for Phase 3 evidence retrieval & Phase 4 robustness
+          5. party: Validated & retained for Phase 3 evidence retrieval & Phase 4 robustness
+          6. job: Validated & retained for Phase 3 evidence retrieval & Phase 4 robustness
+
+        During Phase 2 fine-tuning on Google Colab, the RoBERTa tokenizer received
+        the sentence-pair: statement + `Speaker: {speaker} | Context: {context}`.
+        To preserve exact training fidelity and prevent out-of-distribution shifts,
+        inference constructs the sentence pair using speaker and context.
+
+        Representation of Missing Metadata:
+        When any metadata field is omitted, None, empty, or whitespace-only, it
+        strictly defaults to 'unknown' (matching training: `strip() or 'unknown'`).
         """
         if metadata is None:
             return "Speaker: unknown | Context: unknown"
 
         if isinstance(metadata, dict):
-            speaker = metadata.get("speaker") or "unknown"
-            context = metadata.get("context") or "unknown"
+            speaker_raw = metadata.get("speaker") or metadata.get("Speaker")
+            context_raw = metadata.get("context") or metadata.get("Context")
         else:
-            speaker = getattr(metadata, "speaker", None) or "unknown"
-            context = getattr(metadata, "context", None) or "unknown"
+            speaker_raw = getattr(metadata, "speaker", None)
+            context_raw = getattr(metadata, "context", None)
 
-        speaker_clean = str(speaker).strip() or "unknown"
-        context_clean = str(context).strip() or "unknown"
+        speaker_clean = str(speaker_raw).strip() if speaker_raw is not None else ""
+        context_clean = str(context_raw).strip() if context_raw is not None else ""
 
-        return f"Speaker: {speaker_clean} | Context: {context_clean}"
+        speaker_val = speaker_clean if speaker_clean else "unknown"
+        context_val = context_clean if context_clean else "unknown"
+
+        return f"Speaker: {speaker_val} | Context: {context_val}"
 
     def _resolve_model_location(self) -> Tuple[str, Optional[str]]:
         """
