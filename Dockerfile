@@ -9,13 +9,18 @@ ENV PYTHONUNBUFFERED=1 \
     MODEL_SOURCE=huggingface \
     HF_MODEL_REPO=soah-13/truthlens-roberta-liar-meta
 
-# Install runtime utilities
+# Install runtime utilities and build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-install CPU-only PyTorch wheel to keep image compact (<1 GB instead of 3+ GB CUDA)
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# Upgrade pip, setuptools, and wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install CPU-only PyTorch using --extra-index-url to resolve PyPI dependencies
+RUN pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Install application dependencies
 COPY backend/requirements.txt /app/requirements.txt
