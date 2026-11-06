@@ -1,4 +1,4 @@
-import { HealthResponse, ModelMetricsResponse } from '../types';
+import { HealthResponse, ModelMetricsResponse, AnalyzeApiResponse } from '../types';
 
 // Read API base URL from Vite environment variable with safe fallback
 const API_BASE_URL: string =
@@ -51,6 +51,38 @@ export const apiService = {
     }
 
     const data: ModelMetricsResponse = await response.json();
+    return data;
+  },
+
+  /**
+   * Dispatches claim text to the RoBERTa + Tavily analysis endpoint.
+   */
+  async analyzeClaim(
+    text: string,
+    metadata?: { speaker?: string; context?: string; subject?: string } | null,
+    includeEvidence: boolean = true
+  ): Promise<AnalyzeApiResponse> {
+    const url = buildUrl('/api/analyze');
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        metadata: metadata || null,
+        include_evidence: includeEvidence,
+      }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const detail = errData.detail || `Analysis failed with status ${response.status}`;
+      throw new Error(detail);
+    }
+
+    const data: AnalyzeApiResponse = await response.json();
     return data;
   },
 

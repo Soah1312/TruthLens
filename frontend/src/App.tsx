@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { DashboardPage } from './pages/DashboardPage';
+import { NewsAnalysisView } from './components/analysis/NewsAnalysisView';
 import { useHealth } from './hooks/useHealth';
 import { NavTabId } from './types';
 import { Layers, ArrowLeft } from 'lucide-react';
@@ -29,6 +30,8 @@ export const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto">
           {activeTab === 'overview' ? (
             <DashboardPage />
+          ) : activeTab === 'news-analysis' ? (
+            <NewsAnalysisView />
           ) : (
             <div className="p-8 max-w-4xl mx-auto py-20 text-center">
               <div className="w-14 h-14 rounded-2xl bg-indigo-950/60 border border-indigo-800/40 text-indigo-400 mx-auto flex items-center justify-center mb-4">

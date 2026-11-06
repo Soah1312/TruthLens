@@ -70,3 +70,41 @@ export interface RobustnessEvaluationPlaceholder {
   attackType?: string;
   phase: string;
 }
+
+export type VeracityLabel =
+  | 'pants-fire'
+  | 'false'
+  | 'barely-true'
+  | 'half-true'
+  | 'mostly-true'
+  | 'true';
+
+export interface EvidenceSource {
+  title: string;
+  url: string;
+  domain: string;
+  snippet: string;
+  relevance_score: number;
+  published_date?: string | null;
+}
+
+export interface EvidenceData {
+  status: 'success' | 'no_results' | 'unavailable' | 'error';
+  query: string;
+  results: EvidenceSource[];
+  summary: string;
+}
+
+export interface AnalyzePrediction {
+  label: VeracityLabel;
+  class_id: number;
+  confidence: number;
+  class_scores: Record<VeracityLabel, number>;
+}
+
+export interface AnalyzeApiResponse {
+  prediction: AnalyzePrediction;
+  model: string;
+  evidence?: EvidenceData | null;
+  disclaimer: string;
+}

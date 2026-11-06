@@ -2,167 +2,84 @@
 
 ## 1. Executive Architectural Overview
 
-**TruthLens** is an academic engineering platform designed to investigate and combat the spread of misinformation using Natural Language Processing (NLP), automated web evidence retrieval, and systematic adversarial robustness testing.
+**TruthLens** is an academic engineering and research platform designed to automate fake news detection and evaluate the robustness of transformer-based language models against adversarial textual noise.
 
-The system decouples data ingestion, machine learning inference, evidence synthesis, and presentation into modular subsystems communicating over asynchronous REST APIs and HTTP hooks.
+The system decouples data intake, neural classification, evidence synthesis, and user visualization into modular subsystems:
 
 ```mermaid
 flowchart TD
     subgraph ClientLayer["Client & Intake Layer"]
-        TG["Telegram Bot (Phase 3)\npython-telegram-bot"]
-        WEB["React + TypeScript Dashboard (Phase 1/5)\nVite + Tailwind CSS"]
-        USER["End Users / Reviewers"]
-        USER -->|Submit Text / URL| TG
-        USER -->|Explore Metrics & Status| WEB
+        TG["Telegram Bot Users\n@TruthLensNewsBot"]
+        WEB["React + TypeScript Dashboard\nDeployed on Vercel CDN"]
+        USER["End Users / Researchers"]
+        USER -->|Submit Claims / Articles| TG
+        USER -->|Explore Veracity, Metrics & Robustness| WEB
     end
 
-    subgraph BackendLayer["Backend Application Layer (FastAPI)"]
-        API["FastAPI Gateway (Phase 1)"]
-        HEALTH["/api/health (Phase 1)"]
-        INGEST["Article Extraction Engine (Phase 3)\nTrafilatura"]
-        SEARCH["Evidence Retrieval Service (Phase 3)\nTavily Search API"]
-        ROBUST["Robustness Evaluator (Phase 4)\nAdversarial Perturbations"]
-        DB[(SQLite Database\nSQLAlchemy)]
+    subgraph HostingFrontend["Vercel Edge Platform"]
+        VERCEL["TruthLens Frontend\nReact 18 + Vite + Tailwind\nVercel Static Network"]
     end
 
-    subgraph MLLayer["Machine Learning Layer (PyTorch & Hugging Face)"]
-        MODEL["DistilBERT Classifier (Phase 2)\nFine-Tuned on LIAR Dataset"]
-        TOKENIZER["DistilBERT Tokenizer"]
+    subgraph HostingBackend["Render Persistent Cloud (Docker Container)"]
+        FASTAPI["FastAPI Gateway & Core Application"]
+        ROBERTA["Neural Inference Service\nRoBERTa-base + Metadata\nsoah-13/truthlens-roberta-liar-meta"]
+        TAVILY["Evidence Retrieval Service\nTavily Search API"]
+        WEBHOOK["Telegram Webhook Receiver\nPOST /api/telegram/webhook\nSecret Token Verification"]
+        DB[(SQLite Cache / Database\nSQLAlchemy)]
     end
 
     %% Communications
-    TG -->|POST /api/analyze| API
-    WEB -->|GET /api/health| HEALTH
-    API --> INGEST
-    API --> SEARCH
-    API --> ROBUST
-    API --> DB
-    INGEST --> TOKENIZER
-    TOKENIZER --> MODEL
-    MODEL --> API
+    WEB -->|HTTPS REST| FASTAPI
+    TG -->|HTTPS Push Updates| WEBHOOK
+    WEBHOOK --> FASTAPI
+    FASTAPI --> ROBERTA
+    FASTAPI --> TAVILY
+    FASTAPI --> DB
+    FASTAPI -->|Bot API Messages| TG
 ```
 
 ---
 
-## 2. Component Responsibilities
+## 2. Component Specifications
 
 ### 2.1 Frontend Subsystem (`/frontend`)
-- **Technology**: React 18, Vite, TypeScript, Tailwind CSS, Lucide React, Recharts.
-- **Responsibilities in Phase 1**:
-  - Render a responsive, research-oriented dark SaaS dashboard.
-  - Establish a central API client communicating with the backend over HTTP.
-  - Dynamically poll and display the backend connection state (`Backend Connected` vs `Backend Disconnected`).
-  - Provide structured placeholders for metrics, recent analyses, and adversarial robustness benchmarks without displaying fabricated metrics.
-- **Future Responsibilities (Phases 3 & 5)**:
-  - Display live feeds of verified articles submitted via Telegram.
-  - Visualize prediction confidence distributions and evidence sources.
-  - Render comparative robustness radar/bar charts (clean vs. perturbed accuracy, invariance scores).
+- **Technology**: React 18, TypeScript 5, Vite 5.4, TailwindCSS, Lucide Icons.
+- **Hosting**: Deployed on **Vercel** with global edge caching and SPA client-side routing (`vercel.json`).
+- **Features**:
+  - **Overview Dashboard**: System health indicator, LIAR benchmark summary cards, model metrics visualization.
+  - **Interactive News Analysis**: Dedicated claim verification interface with speaker and context fields, 6-class probability distribution bars, model confidence badge, clickable source links, and academic disclaimer.
+  - **Resilient Degradation**: If external search is unavailable or fails, neural veracity predictions remain visible.
+  - **Environment Configuration**: Configured dynamically via `VITE_API_BASE_URL`.
 
-### 2.2 Backend Subsystem (`/backend`)
-- **Technology**: Python 3.10/3.11, FastAPI, Uvicorn, Pydantic v2, SQLAlchemy 2.0, SQLite.
-- **Responsibilities in Phase 1**:
-  - Expose application discovery at `GET /` and system health at `GET /api/health`.
-  - Provide interactive OpenAPI / Swagger documentation at `/docs`.
-  - Enforce CORS policy allowing requests from `http://localhost:5173`.
-  - Manage database connectivity via SQLAlchemy without premature schema overhead.
-  - Provide structured exception handling and application logging.
-- **Future Responsibilities (Phases 2, 3, 4)**:
-  - Host model inference pipelines and batch prediction endpoints.
-  - Orchestrate Trafilatura body text extraction from user-provided URLs.
-  - Query Tavily Search API to assemble real-world factual context for claims.
-  - Persist analysis history and robustness experiment records to SQLite.
+### 2.2 Backend Application Subsystem (`/backend`)
+- **Technology**: Python 3.10+, FastAPI, Uvicorn, Pydantic v2.
+- **Hosting**: Deployed on **Render** as a dedicated persistent Docker container (`Dockerfile`, `render.yaml`).
+- **Core Endpoints**:
+  - `GET /` — Service discovery and endpoint registry.
+  - `GET /api/health` — Application health, database connectivity, and RoBERTa model initialization state.
+  - `POST /api/predict` — Pure RoBERTa 6-class neural classification.
+  - `POST /api/analyze` — Unified inference + Tavily external web search retrieval with URL deduplication.
+  - `GET /api/model/metrics` — Evaluation benchmark performance on the LIAR test set.
+  - `POST /api/telegram/webhook` — Telegram webhook receiver with header authentication.
 
----
+### 2.3 Neural Inference Subsystem
+- **Model Architecture**: Fine-tuned `roberta-base` sequence classifier (`soah-13/truthlens-roberta-liar-meta`).
+- **Dataset**: LIAR Benchmark (12,800+ annotated statements).
+- **Metadata Encoding**: Sentence-pair formulation strictly matching Colab training:
+  $$\text{Input} = [\text{Statement}] \text{ [SEP] } \text{Speaker: } \langle\text{speaker}\rangle \text{ | Context: } \langle\text{context}\rangle$$
+- **Output Labels**: Canonical 6-class truthfulness scale (`pants-fire`, `false`, `barely-true`, `half-true`, `mostly-true`, `true`).
 
-## 3. Future Subsystem Integrations
-
-### 3.1 Machine Learning Model Integration (Phase 2)
-- **Model Choice**: `distilbert-base-uncased` (66M parameters). DistilBERT provides ~97% of BERT's performance with a 40% reduction in size and 60% faster inference latency, making it optimal for rapid turnaround in interactive detection.
-- **Dataset**: LIAR benchmark dataset comprising 12,836 short statements categorized across 6 degrees of truthfulness (`pants-fire`, `false`, `barely-true`, `half-true`, `mostly-true`, `true`), mapped to binary (Real vs. Fake) and multi-class classification heads.
-- **Communication Flow**:
-  1. Input tokens are batched and tokenized using Hugging Face `DistilBertTokenizerFast`.
-  2. The model generates logits converted to calibrated probabilities via Softmax.
-  3. Prediction labels, confidence scores, and attention weights are returned to the caller.
-
-### 3.2 Telegram Bot Integration (Phase 3C — Completed)
-- **Library**: `python-telegram-bot` (v20+, asynchronous runtime).
-- **Architecture**:
-  - Independent client service located in `backend/app/telegram/` with root launcher `bot/run_bot.py`.
-  - Communicates strictly with FastAPI (`POST /api/analyze`) via `httpx.AsyncClient` without duplicating model weights or search logic.
-- **Commands**:
-  - `/start`: Official TruthLens welcome greeting and usage orientation.
-  - `/help`: Detailed explanation of the 6 canonical LIAR truthfulness labels, evidence retrieval, and neural limitations.
-  - `/about`: Complete technology stack, model provenance (`soah-13/truthlens-roberta-liar-meta`), and academic objectives.
-- **Response Format**: Structured Markdown reporting containing Claim text, Model Prediction (Label + Confidence %), Model Architecture, Class Scores (6-class distribution), External Evidence items (Title, Domain, Relevance Score, URL link), and mandatory academic disclaimer.
-- **Reliability & Safeguards**: Input bounds validation, message length safety boundary (<4000 characters), backend connection error recovery, and graceful handling of external search degradation.
-
-### 3.3 Web Evidence Retrieval (Phase 3B — Completed)
-- **Provider**: Tavily Search API (`tavily-python` AsyncTavilyClient).
-- **Service**: `backend/app/services/evidence.py`.
-- **Pipeline**:
-  1. **Query Normalization**: Strips conversational preambles ("Says that", "Claims that", quotation marks) and truncates to concise, entity-dense search terms.
-  2. **Tavily Query**: Dispatches asynchronous search with configurable depth (`basic` / `advanced`), max results (default: 5), and timeout bounds.
-  3. **URL Deduplication**: Filters identical and normalized duplicate URLs.
-  4. **Domain & Relevance Extraction**: Extracts host domains (`urllib.parse`), normalizes relevance scores (0.0 to 1.0), and preserves reported publication dates.
-  5. **Academic Categorization**: Results are presented as unclassified external evidence with explicit disclaimers that search scores reflect topical relevance rather than factual truth.
-  6. **Resilience & Fault Isolation**: Model classification succeeds even when Tavily encounters rate limits or network failures; evidence status reports `unavailable` gracefully.
-
-### 3.4 Robustness Evaluation Engine (Phase 4)
-- **Research Goal**: Deep learning NLP models are often brittle against surface-level textual variations that do not alter human-perceived semantics. TruthLens evaluates model resilience under four perturbation strategies:
-  1. **Typographical Noise**: Random character transposition, insertion, deletion, and keyboard neighbor substitutions.
-  2. **Synonym Replacement**: Context-aware replacement of non-stopwords using WordNet embeddings.
-  3. **Syntactic Paraphrasing**: Sentence restructuring and back-translation perturbations.
-  4. **Negation Injection**: Contrastive perturbations to test whether the model is susceptible to "spurious correlation" rather than true logical understanding.
-- **Metrics Tracked**:
-  - Drop in Macro F1-score between baseline and perturbed evaluation sets.
-  - **Prediction Consistency Rate**: Percentage of instances where $f(x) == f(x')$.
+### 2.4 Telegram Bot Integration Subsystem (`/backend/app/telegram`)
+- **Bot Handle**: `@TruthLensNewsBot`
+- **Dual Operating Modes**:
+  1. **Production Webhooks**: Event-driven HTTPS delivery (`POST /api/telegram/webhook`) secured with `X-Telegram-Bot-Api-Secret-Token`.
+  2. **Local Long Polling**: Developer-friendly local execution (`bot/run_bot.py`) via `python-telegram-bot`.
+- **Management CLI**: `backend/scripts/register_webhook.py` provides commands to `--register`, inspect `--status`, or `--delete` webhooks without exposing tokens.
 
 ---
 
-## 4. Communication & Security Architecture
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Telegram User
-    participant Bot as Telegram Bot (Phase 3)
-    participant API as FastAPI Backend (Phase 1)
-    participant Extractor as Trafilatura (Phase 3)
-    participant Search as Tavily API (Phase 3)
-    participant Model as DistilBERT Inference (Phase 2)
-    participant DB as SQLite Storage (Phase 1)
-    actor Analyst as Dashboard User (Phase 1/5)
-
-    Note over API,DB: Phase 1 Active Scope
-    Analyst->>API: GET /api/health
-    API-->>Analyst: { status: "healthy", application: "TruthLens", version: "1.0.0" }
-
-    Note over User,Model: Phase 2 & 3 Future Scope
-    User->>Bot: Send News URL / Text
-    Bot->>API: POST /api/analyze { content: "...", url: "..." }
-    alt URL Provided
-        API->>Extractor: Extract Clean Text
-        Extractor-->>API: Extracted Body
-    end
-    par Inference & Evidence
-        API->>Model: Tokenize & Predict
-        Model-->>API: Logits & Softmax Scores
-    and Evidence Retrieval
-        API->>Search: Search authoritative sources
-        Search-->>API: Evidence Snippets & Sources
-    end
-    API->>DB: Store Analysis Record
-    API-->>Bot: Analysis Verdict & Evidence Summary
-    Bot-->>User: Markdown Result Card with Dashboard Link
-```
-
-### 4.1 Cross-Origin Resource Sharing (CORS)
-- In Phase 1, the backend explicitly allows cross-origin requests from the local Vite development server:
-  - `http://localhost:5173`
-  - `http://127.0.0.1:5173`
-- Configurable via `CORS_ORIGINS` environment variable in `backend/.env`.
-
-### 4.2 Configuration Isolation
-- Backend: Configured via Pydantic v2 `BaseSettings` reading from `.env`.
-- Frontend: Configured via Vite environment variable `VITE_API_BASE_URL`.
-- Secrets: No API keys or credentials committed to source control; `.env.example` templates define all contract parameters.
+## 3. Security & Operational Hardening
+- **Credential Hygiene**: Credentials (`TELEGRAM_BOT_TOKEN`, `TAVILY_API_KEY`, `HF_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`) are read exclusively from environment variables.
+- **No Credentials in Logs**: `httpx` and application loggers suppress URLs containing sensitive tokens.
+- **CORS Architecture**: Configured with explicit origins and regex support (`https://.*\.vercel\.app`) for Vercel preview and production deployments.
+- **Automated Test Coverage**: 58 automated unit and integration tests passing (`pytest backend/tests/`).

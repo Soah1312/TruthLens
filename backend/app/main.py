@@ -12,15 +12,16 @@ from app.api.routes.health import router as health_router
 from app.api.routes.predict import router as predict_router
 from app.api.routes.analyze import router as analyze_router
 from app.api.routes.metrics import router as metrics_router
+from app.api.routes.telegram import router as telegram_router
 from app.core.config import settings
 from app.database.database import engine
 from app.services.classifier import classifier_service
 
-# Configure logging for academic and production traceability
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - [%(levelname)s] - %(name)s - %(message)s",
 )
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger("truthlens.backend")
 
 
@@ -76,10 +77,11 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# Configure Cross-Origin Resource Sharing (CORS) for local Vite frontend
+# Configure Cross-Origin Resource Sharing (CORS) for local Vite frontend and Vercel deployments
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -158,6 +160,7 @@ app.include_router(health_router, prefix="/api")
 app.include_router(predict_router, prefix="/api")
 app.include_router(analyze_router, prefix="/api")
 app.include_router(metrics_router, prefix="/api")
+app.include_router(telegram_router, prefix="/api")
 
 
 if __name__ == "__main__":

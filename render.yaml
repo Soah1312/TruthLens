@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: truthlens-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    region: oregon
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ENVIRONMENT
+        value: production
+      - key: MODEL_SOURCE
+        value: huggingface
+      - key: HF_MODEL_REPO
+        value: soah-13/truthlens-roberta-liar-meta
+      - key: HF_TOKEN
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: TAVILY_SEARCH_DEPTH
+        value: basic
+      - key: TAVILY_MAX_RESULTS
+        value: "5"
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      - key: TELEGRAM_WEBHOOK_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: "http://localhost:5173,https://*.vercel.app"

@@ -33,8 +33,10 @@ class Settings(BaseSettings):
     TAVILY_MAX_RESULTS: int = 5
     TAVILY_TIMEOUT_SECONDS: float = 10.0
 
-    # Telegram Bot Configuration (Phase 3C)
+    # Telegram Bot Configuration (Phase 3C & Final Webhook)
     TELEGRAM_BOT_TOKEN: Optional[str] = None
+    TELEGRAM_WEBHOOK_SECRET: Optional[str] = None
+    TELEGRAM_WEBHOOK_URL: Optional[str] = None
     API_BASE_URL: str = "http://127.0.0.1:8000"
 
     @field_validator("CORS_ORIGINS", mode="before")

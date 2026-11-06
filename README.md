@@ -186,31 +186,81 @@ To execute the DistilBERT training pipeline:
 
 ### Backend Setup
 ```powershell
+# 1. Activate virtual environment
 cd backend
 .\venv\Scripts\Activate.ps1
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Launch FastAPI server daemon
 uvicorn app.main:app --reload --port 8000
 ```
 - API Root: [http://localhost:8000/](http://localhost:8000/)
 - Health Check: [http://localhost:8000/api/health](http://localhost:8000/api/health)
 - Swagger Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Model Metrics: [http://localhost:8000/api/model/metrics](http://localhost:8000/api/model/metrics)
-- Claim Prediction: `POST http://localhost:8000/api/predict`
+- Claim Analysis & Evidence: `POST http://localhost:8000/api/analyze`
+- Telegram Webhook: `POST http://localhost:8000/api/telegram/webhook`
 
 ### Frontend Setup
 ```powershell
 cd frontend
+npm install
 npm run dev
 ```
-- Dashboard: [http://localhost:5173/](http://localhost:5173/)
+- Dashboard & News Analysis: [http://localhost:5173/](http://localhost:5173/)
+
+### Telegram Bot Startup (Local Polling)
+```powershell
+# Remove webhook if previously registered
+python backend/scripts/register_webhook.py --delete
+
+# Run local polling bot
+python bot/run_bot.py
+```
+
+### Running Automated Test Suite
+```powershell
+python -m pytest backend/tests -v
+```
+**Status: 58 / 58 automated unit and integration tests passing.**
 
 ---
 
-## 8. Current Development Status
+## 8. Production Deployment
+
+### Frontend (Vercel)
+The React dashboard is deployed to Vercel via Vercel CLI:
+```bash
+cd frontend
+vercel deploy        # Deploy preview
+vercel deploy --prod # Deploy production
+```
+
+### Backend (Render Docker Container)
+The FastAPI backend is deployed on Render using the included `Dockerfile` and `render.yaml`:
+- **Docker Image**: Python 3.10-slim with CPU-only PyTorch and Transformers.
+- **Model Loading**: Automatically downloads and caches `soah-13/truthlens-roberta-liar-meta` from Hugging Face on startup.
+
+### Telegram Webhook Registration
+Once the backend is live on Render:
+```bash
+python backend/scripts/register_webhook.py --register \
+  --url https://your-backend.onrender.com/api/telegram/webhook \
+  --secret your-secret-token \
+  --drop-pending
+```
+
+---
+
+## 9. Current Development Status
 
 | Phase | Milestone | Status |
 |:---|:---|:---:|
 | **Phase 1** | Foundation, Health Monitoring & Dashboard Skeleton | **COMPLETED** |
-| **Phase 2** | DistilBERT Colab Pipeline, LIAR Dataset & Inference API | **CODE PREPARED** (Awaiting Colab Run) |
-| **Phase 3** | Telegram Bot, Trafilatura Extraction & Tavily Web Search | *Upcoming* |
-| **Phase 4** | Textual Perturbations & Adversarial Robustness Suite | *Upcoming* |
-| **Phase 5** | Analytics Dashboard & Cloud Deployment | *Upcoming* |
+| **Phase 2** | Model Development & Fine-tuning (RoBERTa + Metadata, HF Hub) | **COMPLETED** |
+| **Phase 3A** | FastAPI Backend Integration & 6-Class Inference | **COMPLETED** |
+| **Phase 3B** | Tavily Web Evidence Retrieval & URL Deduplication | **COMPLETED** |
+| **Phase 3C** | Telegram Bot Integration & Formatting | **COMPLETED** |
+| **Final Phase** | Webhook Migration, Production Docker & Vercel Configuration | **COMPLETED** |

@@ -35,8 +35,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab }) => {
       id: 'news-analysis',
       label: 'News Analysis',
       icon: FileSearch,
-      phaseBadge: 'Phase 3',
-      isPlaceholder: true,
+      phaseBadge: 'Active',
+      isPlaceholder: false,
     },
     {
       id: 'robustness',
