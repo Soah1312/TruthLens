@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     MAX_INPUT_LENGTH: int = 5000
     MIN_INPUT_LENGTH: int = 3
 
+    # Tavily Search API Configuration (Phase 3B)
+    TAVILY_API_KEY: Optional[str] = None
+    TAVILY_SEARCH_DEPTH: str = "basic"  # 'basic' or 'advanced'
+    TAVILY_MAX_RESULTS: int = 5
+    TAVILY_TIMEOUT_SECONDS: float = 10.0
+
+    # Telegram Bot Configuration (Phase 3C)
+    TELEGRAM_BOT_TOKEN: Optional[str] = None
+    API_BASE_URL: str = "http://127.0.0.1:8000"
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:

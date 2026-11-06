@@ -13,6 +13,7 @@ from app.services.classifier import (
     ModelNotAvailableError,
     ModelInferenceError,
 )
+from app.services.evidence import evidence_service
 
 logger = logging.getLogger("truthlens.routes.analyze")
 router = APIRouter(prefix="/analyze", tags=["Inference"])
@@ -25,11 +26,12 @@ router = APIRouter(prefix="/analyze", tags=["Inference"])
     summary="Analyze News Claim or Statement",
     description=(
         "Evaluates a text statement using fine-tuned RoBERTa with sentence-pair metadata inputs (Speaker, Context). "
-        "Returns 6-class truthfulness distribution, predicted category, confidence score, and academic disclaimer."
+        "Optionally retrieves relevant external web evidence via Tavily Search API when include_evidence is enabled. "
+        "Returns 6-class truthfulness distribution, predicted category, confidence score, evidence context, and academic disclaimer."
     ),
     responses={
         200: {
-            "description": "Successful classification.",
+            "description": "Successful classification with optional external evidence.",
             "content": {
                 "application/json": {
                     "example": {
@@ -47,7 +49,23 @@ router = APIRouter(prefix="/analyze", tags=["Inference"])
                             },
                         },
                         "model": "RoBERTa + Metadata",
-                        "disclaimer": "This is a model prediction, not independent factual verification.",
+                        "evidence": {
+                            "status": "success",
+                            "query": "government new economic policy",
+                            "results": [
+                                {
+                                    "title": "Government Announces New Fiscal Plan",
+                                    "url": "https://example.com/article",
+                                    "domain": "example.com",
+                                    "snippet": "The government released a new policy statement today.",
+                                    "relevance_score": 0.91,
+                                    "published_date": None,
+                                    "classification": "unclassified",
+                                }
+                            ],
+                            "summary": "External search results retrieved. Their factual relevance has not been independently verified.",
+                        },
+                        "disclaimer": "The model prediction is not independent factual verification. Retrieved search results should be evaluated against their original sources.",
                     }
                 }
             },
@@ -74,7 +92,7 @@ router = APIRouter(prefix="/analyze", tags=["Inference"])
     },
 )
 async def analyze_claim(request: AnalyzeRequest) -> AnalyzeResponse:
-    """Classify a statement's truthfulness using RoBERTa + Metadata."""
+    """Classify a statement's truthfulness using RoBERTa + Metadata, with optional Tavily web evidence."""
     cleaned_text = request.text.strip() if request.text else ""
     if not cleaned_text:
         raise HTTPException(
@@ -94,12 +112,12 @@ async def analyze_claim(request: AnalyzeRequest) -> AnalyzeResponse:
             detail=f"Statement text exceeds maximum allowed length of {settings.MAX_INPUT_LENGTH} characters.",
         )
 
+    # 1. Neural RoBERTa Classification (Always executed)
     try:
-        result = classifier_service.predict(
+        prediction_result = classifier_service.predict(
             text=cleaned_text,
             metadata=request.metadata,
         )
-        return AnalyzeResponse(**result)
     except ModelNotAvailableError as exc:
         logger.error("Model unavailable for inference: %s", exc)
         raise HTTPException(
@@ -121,3 +139,29 @@ async def analyze_claim(request: AnalyzeRequest) -> AnalyzeResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred during prediction: {str(exc)}",
         )
+
+    # 2. External Web Evidence Retrieval via Tavily (Executed only if requested)
+    evidence_payload = None
+    if request.include_evidence:
+        try:
+            evidence_payload = await evidence_service.search_evidence(cleaned_text)
+        except Exception as exc:
+            logger.warning("Evidence retrieval failed gracefully: %s", exc)
+            evidence_payload = {
+                "status": "unavailable",
+                "query": cleaned_text,
+                "results": [],
+                "summary": "External evidence retrieval encountered a temporary error.",
+                "error": str(exc),
+            }
+
+    return AnalyzeResponse(
+        prediction=prediction_result["prediction"],
+        model=prediction_result.get("model", "RoBERTa + Metadata"),
+        evidence=evidence_payload,
+        disclaimer=prediction_result.get(
+            "disclaimer",
+            "The model prediction is not independent factual verification. "
+            "Retrieved search results should be evaluated against their original sources.",
+        ),
+    )

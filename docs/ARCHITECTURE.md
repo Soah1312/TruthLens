@@ -84,20 +84,28 @@ flowchart TD
   2. The model generates logits converted to calibrated probabilities via Softmax.
   3. Prediction labels, confidence scores, and attention weights are returned to the caller.
 
-### 3.2 Telegram Bot Integration (Phase 3)
-- **Library**: `python-telegram-bot` (asynchronous runtime).
-- **Intake Modalities**:
-  - **Raw Text**: Users forward or paste claims/paragraphs directly into chat.
-  - **URL Extraction**: Users submit links; the backend runs Trafilatura to extract primary article text while discarding ads and boilerplate.
-- **Response Format**: Formatted Telegram Markdown messages with verdict badges (e.g., `[FAKE NEWS - 94% CONFIDENCE]`), supporting evidence summaries, and a deep-link to the TruthLens web dashboard.
+### 3.2 Telegram Bot Integration (Phase 3C — Completed)
+- **Library**: `python-telegram-bot` (v20+, asynchronous runtime).
+- **Architecture**:
+  - Independent client service located in `backend/app/telegram/` with root launcher `bot/run_bot.py`.
+  - Communicates strictly with FastAPI (`POST /api/analyze`) via `httpx.AsyncClient` without duplicating model weights or search logic.
+- **Commands**:
+  - `/start`: Official TruthLens welcome greeting and usage orientation.
+  - `/help`: Detailed explanation of the 6 canonical LIAR truthfulness labels, evidence retrieval, and neural limitations.
+  - `/about`: Complete technology stack, model provenance (`soah-13/truthlens-roberta-liar-meta`), and academic objectives.
+- **Response Format**: Structured Markdown reporting containing Claim text, Model Prediction (Label + Confidence %), Model Architecture, Class Scores (6-class distribution), External Evidence items (Title, Domain, Relevance Score, URL link), and mandatory academic disclaimer.
+- **Reliability & Safeguards**: Input bounds validation, message length safety boundary (<4000 characters), backend connection error recovery, and graceful handling of external search degradation.
 
-### 3.3 Web Evidence Retrieval (Phase 3)
-- **Provider**: Tavily Search API.
+### 3.3 Web Evidence Retrieval (Phase 3B — Completed)
+- **Provider**: Tavily Search API (`tavily-python` AsyncTavilyClient).
+- **Service**: `backend/app/services/evidence.py`.
 - **Pipeline**:
-  1. Extract core semantic entities and subject-predicate triples from the target claim.
-  2. Query Tavily with news-specific filters.
-  3. Aggregate top authoritative sources, publication timestamps, and snippet agreements.
-  4. Compare extracted snippets with the claim to produce contextual grounding for the user.
+  1. **Query Normalization**: Strips conversational preambles ("Says that", "Claims that", quotation marks) and truncates to concise, entity-dense search terms.
+  2. **Tavily Query**: Dispatches asynchronous search with configurable depth (`basic` / `advanced`), max results (default: 5), and timeout bounds.
+  3. **URL Deduplication**: Filters identical and normalized duplicate URLs.
+  4. **Domain & Relevance Extraction**: Extracts host domains (`urllib.parse`), normalizes relevance scores (0.0 to 1.0), and preserves reported publication dates.
+  5. **Academic Categorization**: Results are presented as unclassified external evidence with explicit disclaimers that search scores reflect topical relevance rather than factual truth.
+  6. **Resilience & Fault Isolation**: Model classification succeeds even when Tavily encounters rate limits or network failures; evidence status reports `unavailable` gracefully.
 
 ### 3.4 Robustness Evaluation Engine (Phase 4)
 - **Research Goal**: Deep learning NLP models are often brittle against surface-level textual variations that do not alter human-perceived semantics. TruthLens evaluates model resilience under four perturbation strategies:

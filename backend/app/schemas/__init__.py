@@ -8,6 +8,8 @@ from app.schemas.analyze import (
     AnalyzeResponse,
     ClaimMetadata,
     PredictionDetail,
+    EvidenceResult,
+    EvidencePayload,
 )
 
 __all__ = [
@@ -19,4 +21,6 @@ __all__ = [
     "AnalyzeResponse",
     "ClaimMetadata",
     "PredictionDetail",
+    "EvidenceResult",
+    "EvidencePayload",
 ]

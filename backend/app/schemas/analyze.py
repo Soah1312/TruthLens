@@ -3,7 +3,7 @@ TruthLens Schemas for /api/analyze endpoint.
 Preserves canonical 6-class LIAR mapping and academic integrity.
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from pydantic import BaseModel, Field
 
 
@@ -66,6 +66,84 @@ class AnalyzeRequest(BaseModel):
         None,
         description="Optional statement metadata. When omitted, missing attributes explicitly default to 'unknown'.",
     )
+    include_evidence: bool = Field(
+        False,
+        description="Whether to retrieve relevant external web evidence via Tavily Search API.",
+        json_schema_extra={"example": True},
+    )
+
+
+class EvidenceResult(BaseModel):
+    """Structured external web evidence item retrieved from search."""
+    title: str = Field(
+        ...,
+        description="Title of the source webpage or article",
+        json_schema_extra={"example": "Government Announces New Fiscal Stimulus Plan"},
+    )
+    url: str = Field(
+        ...,
+        description="Direct URL to the external source",
+        json_schema_extra={"example": "https://example.com/economy-news"},
+    )
+    domain: str = Field(
+        ...,
+        description="Host domain of the source (e.g., reuters.com, bbc.com)",
+        json_schema_extra={"example": "example.com"},
+    )
+    snippet: str = Field(
+        ...,
+        description="Relevant text excerpt retrieved from the webpage",
+        json_schema_extra={"example": "The government announced a major new economic policy package today."},
+    )
+    relevance_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Tavily search relevance score (indicates topical similarity, not factual correctness)",
+        json_schema_extra={"example": 0.89},
+    )
+    published_date: Optional[str] = Field(
+        None,
+        description="Publication date if reported by the source metadata (not fabricated)",
+        json_schema_extra={"example": "2026-10-15"},
+    )
+    classification: str = Field(
+        default="unclassified",
+        description=(
+            "Evidence relationship to the claim. Presented as 'unclassified' because reliable "
+            "classification into supporting/contradicting requires an additional reasoning model."
+        ),
+        json_schema_extra={"example": "unclassified"},
+    )
+
+
+class EvidencePayload(BaseModel):
+    """Container for external web evidence retrieved from Tavily."""
+    status: str = Field(
+        ...,
+        description="Retrieval status: 'success', 'unavailable', 'no_results', or 'error'",
+        json_schema_extra={"example": "success"},
+    )
+    query: Optional[str] = Field(
+        None,
+        description="The normalized search query dispatched to Tavily",
+        json_schema_extra={"example": "government new economic policy"},
+    )
+    results: List[EvidenceResult] = Field(
+        default_factory=list,
+        description="List of deduplicated external evidence items (max 5)",
+    )
+    summary: Optional[str] = Field(
+        None,
+        description="Neutral summary of retrieval status and academic caveats",
+        json_schema_extra={
+            "example": "External search results retrieved. Their factual relevance has not been independently verified."
+        },
+    )
+    error: Optional[str] = Field(
+        None,
+        description="Diagnostic error message when evidence retrieval is unavailable",
+    )
 
 
 class PredictionDetail(BaseModel):
@@ -106,15 +184,27 @@ class PredictionDetail(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
-    """Schema for the /api/analyze response."""
+    """Schema for the /api/analyze response combining neural prediction and optional web evidence."""
     prediction: PredictionDetail
     model: str = Field(
         ...,
         description="Name of the model architecture used for inference",
         json_schema_extra={"example": "RoBERTa + Metadata"},
     )
+    evidence: Optional[EvidencePayload] = Field(
+        None,
+        description="External web evidence retrieved via Tavily Search API (strictly separate from model prediction)",
+    )
     disclaimer: str = Field(
-        default="This is a model prediction, not independent factual verification.",
+        default=(
+            "The model prediction is not independent factual verification. "
+            "Retrieved search results should be evaluated against their original sources."
+        ),
         description="Mandatory academic disclaimer",
-        json_schema_extra={"example": "This is a model prediction, not independent factual verification."},
+        json_schema_extra={
+            "example": (
+                "The model prediction is not independent factual verification. "
+                "Retrieved search results should be evaluated against their original sources."
+            )
+        },
     )

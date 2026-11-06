@@ -77,25 +77,40 @@ truthlens/
 │   │   ├── api/
 │   │   │   └── routes/
 │   │   │       ├── health.py          # GET /api/health (System health)
-│   │   │       ├── predict.py         # POST /api/predict (6-class claim inference)
-│   │   │       └── metrics.py         # GET /api/model/metrics (Colab benchmark metrics)
+│   │   │       ├── analyze.py         # POST /api/analyze (RoBERTa 6-class claim + Tavily evidence)
+│   │   │       ├── predict.py         # POST /api/predict (Legacy backwards-compatible endpoint)
+│   │   │       └── metrics.py         # GET /api/model/metrics (Benchmark metrics)
 │   │   ├── core/
 │   │   │   └── config.py              # Pydantic v2 environment settings
 │   │   ├── database/
 │   │   │   └── database.py            # SQLAlchemy SQLite connection setup
 │   │   ├── services/
-│   │   │   └── classifier.py          # Singleton DistilBERT inference service
+│   │   │   ├── classifier.py          # Singleton fine-tuned RoBERTa + Metadata inference service
+│   │   │   └── evidence.py            # Tavily Search API external web evidence retrieval service
+│   │   ├── telegram/
+│   │   │   ├── bot.py                 # python-telegram-bot application builder & polling runner
+│   │   │   ├── handlers.py            # Telegram command (/start, /help, /about) & claim intake handlers
+│   │   │   ├── formatter.py           # Structured Telegram analysis card formatter
+│   │   │   └── config.py              # Bot configuration and timeout settings
 │   │   ├── schemas/
 │   │   │   ├── health.py              # Health response contract
+│   │   │   ├── analyze.py             # Analyze request/response & evidence payload contracts
 │   │   │   ├── predict.py             # Prediction request/response schemas
 │   │   │   └── metrics.py             # Evaluation metrics response schema
 │   │   └── main.py                    # FastAPI application initialization & CORS
 │   ├── tests/
-│   │   ├── test_health.py             # Phase 1 health check tests
-│   │   └── test_phase2.py             # Phase 2 inference, validation & metrics tests
+│   │   ├── test_health.py             # Health check tests
+│   │   ├── test_phase2.py             # Phase 2 inference & metrics tests
+│   │   ├── test_roberta_inference.py  # RoBERTa inference & metadata alignment tests
+│   │   ├── test_evidence.py           # Tavily evidence retrieval unit & resilience tests
+│   │   └── test_telegram_bot.py       # Telegram bot command & intake handler tests
 │   ├── requirements.txt               # Backend dependencies
 │   ├── .env.example                   # Backend environment template
 │   └── .env                           # Local environment config (ignored)
+│
+├── bot/
+│   ├── run_bot.py                     # Root CLI launcher for TruthLens Telegram bot
+│   └── README.md                      # Bot operational instructions
 │
 ├── frontend/
 │   ├── src/
