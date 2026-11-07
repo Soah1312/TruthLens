@@ -20,10 +20,10 @@ class Settings(BaseSettings):
 
     # Model and Inference Configuration
     MODEL_SOURCE: str = "huggingface"  # 'huggingface' or 'local'
-    LOCAL_MODEL_PATH: str = "models/roberta-liar-meta"
-    HF_MODEL_REPO: str = "soah-13/truthlens-roberta-liar-meta"
+    LOCAL_MODEL_PATH: str = "models/deberta-v3-liar"
+    HF_MODEL_REPO: str = "soah-13/truthlens-deberta-v3-liar"
     HF_TOKEN: Optional[str] = None
-    METRICS_FILE_PATH: str = "models/roberta-liar-meta/metrics.json"
+    METRICS_FILE_PATH: str = "models/deberta-v3-liar/evaluation_results.json"
     MAX_INPUT_LENGTH: int = 5000
     MIN_INPUT_LENGTH: int = 3
 

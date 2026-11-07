@@ -50,19 +50,28 @@ async def get_model_metrics() -> ModelMetricsResponse:
         with open(metrics_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        test_m = data.get("test_metrics_6class") or data.get("test_metrics", {})
+        test_m = (
+            data.get("test_evaluation_metrics")
+            or data.get("test_metrics_6class")
+            or data.get("test_metrics", {})
+        )
+        model_name = (
+            data.get("architecture")
+            or data.get("model_checkpoint")
+            or data.get("model_name", "DeBERTa-v3 + Metadata")
+        )
         return ModelMetricsResponse(
             status="available",
             message="Evaluation metrics loaded successfully from training artifacts.",
-            model_name=data.get("model_name", "roberta-base (Metadata + Label Smoothing)"),
+            model_name=model_name,
             accuracy=test_m.get("accuracy"),
             macro_precision=test_m.get("macro_precision"),
             macro_recall=test_m.get("macro_recall"),
             macro_f1=test_m.get("macro_f1"),
             weighted_f1=test_m.get("weighted_f1"),
-            evaluation_date=data.get("evaluation_date"),
-            baseline_metrics=data.get("baseline_metrics"),
-            per_class_metrics=data.get("per_class_metrics"),
+            evaluation_date=data.get("export_timestamp") or data.get("evaluation_date"),
+            baseline_metrics=data.get("baseline_roberta_comparison") or data.get("baseline_metrics"),
+            per_class_metrics=test_m.get("per_class_f1") or data.get("per_class_metrics"),
         )
     except Exception as exc:
         logger.error("Failed to parse metrics file at %s: %s", metrics_path, exc)

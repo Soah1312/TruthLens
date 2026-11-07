@@ -149,6 +149,15 @@ class RoBERTaInferenceService:
             model_location, token = self._resolve_model_location()
             self.model_repo = model_location
 
+            if "deberta" in str(model_location).lower():
+                self.model_identifier = "DeBERTa-v3 + Metadata"
+            elif "roberta" in str(model_location).lower():
+                self.model_identifier = "RoBERTa + Metadata"
+            elif "distilbert" in str(model_location).lower():
+                self.model_identifier = "DistilBERT"
+            else:
+                self.model_identifier = MODEL_IDENTIFIER
+
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             logger.info("Initializing %s on %s from: %s", self.model_identifier, self.device, model_location)
 

@@ -1,0 +1,58 @@
+{
+  "experiment_id": "TruthLens_Experiment_4_DeBERTa_v3_Base",
+  "model_checkpoint": "microsoft/deberta-v3-base",
+  "export_timestamp": "2026-11-07 06:07:07 UTC",
+  "task": "LIAR 6-Class Political Truthfulness Classification",
+  "architecture": "DeBERTa-v3-base (Encoder-only Transformer)",
+  "label_mapping": {
+    "label2id": {
+      "pants-fire": 0,
+      "false": 1,
+      "barely-true": 2,
+      "half-true": 3,
+      "mostly-true": 4,
+      "true": 5
+    },
+    "id2label": {
+      "0": "pants-fire",
+      "1": "false",
+      "2": "barely-true",
+      "3": "half-true",
+      "4": "mostly-true",
+      "5": "true"
+    }
+  },
+  "hyperparameters": {
+    "epochs": 4,
+    "learning_rate": 2e-05,
+    "batch_size_effective": 16,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.1,
+    "max_sequence_length": 160,
+    "optimizer": "AdamW",
+    "loss": "Cross-Entropy (No Class Weights)",
+    "gradient_clipping": 1.0,
+    "seed": 42
+  },
+  "test_evaluation_metrics": {
+    "test_loss": 1.6295973867177964,
+    "accuracy": 0.2951854775059195,
+    "macro_precision": 0.3141242484237489,
+    "macro_recall": 0.29024276224322576,
+    "macro_f1": 0.29615839177817804,
+    "weighted_f1": 0.2930089026232016,
+    "per_class_f1": {
+      "pants-fire": 0.33783783783783783,
+      "false": 0.3586206896551724,
+      "barely-true": 0.25136612021857924,
+      "half-true": 0.2727272727272727,
+      "mostly-true": 0.29004329004329005,
+      "true": 0.26635514018691586
+    }
+  },
+  "baseline_roberta_comparison": {
+    "roberta_macro_f1": 28.39,
+    "deberta_macro_f1": 29.62,
+    "delta_macro_f1": 1.23
+  }
+}
