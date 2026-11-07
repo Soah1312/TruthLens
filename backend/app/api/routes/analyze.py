@@ -14,6 +14,7 @@ from app.services.classifier import (
     ModelInferenceError,
 )
 from app.services.evidence import evidence_service
+from app.services.evidence_analyzer import evidence_analyzer_service
 
 logger = logging.getLogger("truthlens.routes.analyze")
 router = APIRouter(prefix="/analyze", tags=["Inference"])
@@ -140,7 +141,7 @@ async def analyze_claim(request: AnalyzeRequest) -> AnalyzeResponse:
             detail=f"An unexpected error occurred during prediction: {str(exc)}",
         )
 
-    # 2. External Web Evidence Retrieval via Tavily (Executed only if requested)
+    # 2. External Web Evidence Retrieval via Tavily & LLM Evidence Analysis via Groq
     evidence_payload = None
     if request.include_evidence:
         try:
@@ -155,9 +156,41 @@ async def analyze_claim(request: AnalyzeRequest) -> AnalyzeResponse:
                 "error": str(exc),
             }
 
+        # 3. Grounded Evidence Relationship Analysis via Groq LLM
+        if evidence_payload and evidence_payload.get("status") == "success" and evidence_payload.get("results"):
+            try:
+                analysis = await evidence_analyzer_service.analyze_evidence(
+                    claim=cleaned_text,
+                    search_results=evidence_payload["results"],
+                )
+                evidence_payload["overall_assessment"] = analysis.get("overall_assessment")
+                evidence_payload["analysis_status"] = analysis.get("status", "completed")
+                evidence_payload["analysis_summary"] = analysis.get("summary")
+                evidence_payload["limitations"] = analysis.get("limitations", [])
+                evidence_payload["source_assessments"] = analysis.get("source_assessments", [])
+            except Exception as exc:
+                logger.warning("Groq evidence analysis failed gracefully: %s", exc)
+                evidence_payload["overall_assessment"] = None
+                evidence_payload["analysis_status"] = "failed"
+                evidence_payload["analysis_summary"] = "External evidence relationship analysis encountered a temporary failure."
+                evidence_payload["limitations"] = ["LLM evidence reasoning pass could not be completed."]
+                evidence_payload["source_assessments"] = []
+        elif evidence_payload and evidence_payload.get("status") == "no_results":
+            evidence_payload["overall_assessment"] = "insufficient_evidence"
+            evidence_payload["analysis_status"] = "skipped"
+            evidence_payload["analysis_summary"] = "No external web sources were found to substantiate or refute the claim."
+            evidence_payload["limitations"] = ["Zero external articles returned by search engine."]
+            evidence_payload["source_assessments"] = []
+        elif evidence_payload:
+            evidence_payload["overall_assessment"] = None
+            evidence_payload["analysis_status"] = "unavailable"
+            evidence_payload["analysis_summary"] = None
+            evidence_payload["limitations"] = []
+            evidence_payload["source_assessments"] = []
+
     return AnalyzeResponse(
         prediction=prediction_result["prediction"],
-        model=prediction_result.get("model", "RoBERTa + Metadata"),
+        model=prediction_result.get("model", "DeBERTa-v3 + Metadata"),
         evidence=evidence_payload,
         disclaimer=prediction_result.get(
             "disclaimer",

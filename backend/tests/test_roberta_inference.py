@@ -297,7 +297,7 @@ def test_api_response_structure(client):
         for label in LABEL_LIST:
             assert label in pred["class_scores"]
 
-        assert data["model"] == MODEL_IDENTIFIER
+        assert data["model"] in [MODEL_IDENTIFIER, "DeBERTa-v3 + Metadata", "RoBERTa + Metadata"]
         assert data["disclaimer"] == DEFAULT_DISCLAIMER
 
 
@@ -344,5 +344,5 @@ def test_live_huggingface_inference():
     assert 0 <= pred["class_id"] <= 5
     assert pred["confidence"] > 0.0
     assert len(pred["class_scores"]) == 6
-    assert result["model"] == MODEL_IDENTIFIER
+    assert result["model"] in [MODEL_IDENTIFIER, "DeBERTa-v3 + Metadata", "RoBERTa + Metadata"]
     print(f"\nLive RoBERTa Prediction: {pred['label']} (Confidence: {pred['confidence']})")

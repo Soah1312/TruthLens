@@ -6,11 +6,17 @@ import {
   ExternalLink,
   AlertTriangle,
   CheckCircle2,
+  XCircle,
+  MinusCircle,
+  Scale,
   HelpCircle,
   Sparkles,
   RefreshCw,
   Globe,
   Info,
+  Calendar,
+  Quote,
+  ShieldAlert,
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { AnalyzeApiResponse, VeracityLabel } from '../../types';
@@ -72,6 +78,74 @@ const ORDERED_LABELS: VeracityLabel[] = [
   'true',
 ];
 
+const OVERALL_ASSESSMENT_CONFIG: Record<
+  string,
+  { title: string; bg: string; text: string; border: string; icon: React.ReactNode; description: string }
+> = {
+  supports: {
+    title: 'Evidence Supports Claim',
+    bg: 'bg-emerald-950/40',
+    text: 'text-emerald-400',
+    border: 'border-emerald-800/80',
+    icon: <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />,
+    description: 'Retrieved external reporting provides direct corroboration for the submitted statement.',
+  },
+  contradicts: {
+    title: 'Evidence Contradicts Claim',
+    bg: 'bg-rose-950/40',
+    text: 'text-rose-400',
+    border: 'border-rose-800/80',
+    icon: <XCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />,
+    description: 'Retrieved external reporting directly refutes or conflicts with the submitted statement.',
+  },
+  mixed: {
+    title: 'Mixed / Conflicting Evidence',
+    bg: 'bg-amber-950/40',
+    text: 'text-amber-400',
+    border: 'border-amber-800/80',
+    icon: <Scale className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />,
+    description: 'Retrieved sources contain contradictory findings or differing perspectives on the claim.',
+  },
+  insufficient_evidence: {
+    title: 'Insufficient External Evidence',
+    bg: 'bg-slate-900/60',
+    text: 'text-slate-300',
+    border: 'border-slate-700/80',
+    icon: <MinusCircle className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />,
+    description: 'Available external sources do not provide sufficient direct factual reporting to verify or refute the statement.',
+  },
+};
+
+const RELATIONSHIP_CONFIG: Record<
+  string,
+  { label: string; bg: string; text: string; border: string }
+> = {
+  supports: {
+    label: 'Supports',
+    bg: 'bg-emerald-950/70',
+    text: 'text-emerald-300',
+    border: 'border-emerald-700/80',
+  },
+  contradicts: {
+    label: 'Contradicts',
+    bg: 'bg-rose-950/70',
+    text: 'text-rose-300',
+    border: 'border-rose-700/80',
+  },
+  neutral: {
+    label: 'Neutral',
+    bg: 'bg-slate-800/80',
+    text: 'text-slate-300',
+    border: 'border-slate-700',
+  },
+  unclassified: {
+    label: 'Unclassified',
+    bg: 'bg-slate-800/50',
+    text: 'text-slate-400',
+    border: 'border-slate-800',
+  },
+};
+
 export const NewsAnalysisView: React.FC = () => {
   const [claimText, setClaimText] = useState('');
   const [speaker, setSpeaker] = useState('');
@@ -130,13 +204,13 @@ export const NewsAnalysisView: React.FC = () => {
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium mb-3">
           <FileSearch className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Interactive Neural Veracity Analysis &bull; RoBERTa + Tavily</span>
+          <span>Neural Claim Classification &bull; DeBERTa-v3 &bull; Groq Evidence Analysis</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
-          Claim &amp; News Analysis
+          Claim &amp; Evidence Analysis
         </h1>
         <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
-          Submit any public claim or news statement. The fine-tuned RoBERTa model processes statement semantics paired with optional metadata, while Tavily simultaneously retrieves real-time web evidence to provide comprehensive context.
+          Submit any public claim or news statement. TruthLens executes 6-class neural classification with fine-tuned DeBERTa-v3, retrieves real-time web sources via Tavily, and analyzes evidence relationships using Groq LLM reasoning.
         </p>
       </div>
 
@@ -213,7 +287,7 @@ export const NewsAnalysisView: React.FC = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Analyzing Claim &amp; Searching Web...</span>
+                      <span>Analyzing Claim &amp; Evaluating Evidence...</span>
                     </>
                   ) : (
                     <>
@@ -240,11 +314,19 @@ export const NewsAnalysisView: React.FC = () => {
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 space-y-2 text-xs text-slate-400">
             <div className="flex items-center gap-2 text-slate-300 font-medium">
               <Info className="w-4 h-4 text-sky-400" />
-              <span>Academic Analysis Architecture</span>
+              <span>Academic Tripartite Pipeline</span>
             </div>
-            <p className="leading-relaxed text-[11px]">
-              Predictions are generated by the fine-tuned <code className="text-indigo-300 font-mono">soah-13/truthlens-roberta-liar-meta</code> model evaluated against the six LIAR benchmark categories. Evidence is gathered via Tavily Search API.
-            </p>
+            <ul className="space-y-1.5 text-[11px] leading-relaxed">
+              <li>
+                <strong className="text-slate-300">1. DeBERTa-v3:</strong> Neural 6-class claim veracity estimation on LIAR benchmark.
+              </li>
+              <li>
+                <strong className="text-slate-300">2. Tavily Search:</strong> Real-time retrieval of up to 5 external news articles.
+              </li>
+              <li>
+                <strong className="text-slate-300">3. Groq LLM:</strong> Grounded source relationship classification (supports, contradicts, neutral) with verified quotation extraction.
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -259,7 +341,7 @@ export const NewsAnalysisView: React.FC = () => {
                 Awaiting Statement Submission
               </h3>
               <p className="text-xs text-slate-400 max-w-sm">
-                Enter a claim on the left to view the 6-class neural truthfulness probability distribution and external web evidence sources.
+                Enter a claim on the left to view the 6-class neural truthfulness probability distribution and external web evidence assessment.
               </p>
             </div>
           )}
@@ -269,10 +351,10 @@ export const NewsAnalysisView: React.FC = () => {
               <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
               <div>
                 <h3 className="text-sm font-semibold text-white mb-1">
-                  Evaluating Neural Credibility...
+                  Evaluating Neural Credibility &amp; Evidence...
                 </h3>
                 <p className="text-xs text-slate-400 max-w-sm">
-                  Computing RoBERTa sentence-pair embeddings and querying Tavily search indexes for corroborating articles.
+                  Computing DeBERTa-v3 embeddings, retrieving external web sources via Tavily, and executing Groq LLM grounded relationship analysis.
                 </p>
               </div>
             </div>
@@ -280,146 +362,271 @@ export const NewsAnalysisView: React.FC = () => {
 
           {result && (
             <div className="space-y-6 animate-fadeIn">
-              {/* Prediction Summary Card */}
-              <div className={`rounded-xl border p-6 ${predConfig?.bg} ${predConfig?.border}`}>
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <div>
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block mb-0.5">
-                      Predicted Classification
-                    </span>
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className={`text-2xl font-extrabold ${predConfig?.text} uppercase tracking-tight`}>
-                        {result.prediction.label}
+              {/* SECTION A: MODEL PREDICTION */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">
+                    SECTION A
+                  </span>
+                  <span>Neural Model Prediction</span>
+                </div>
+
+                <div className={`rounded-xl border p-6 ${predConfig?.bg} ${predConfig?.border}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div>
+                      <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block mb-0.5">
+                        Predicted Classification
                       </span>
-                      {result.model && (
-                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-indigo-500/30 text-indigo-300">
-                          {result.model}
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className={`text-2xl font-extrabold ${predConfig?.text} uppercase tracking-tight`}>
+                          {result.prediction.label}
                         </span>
-                      )}
+                        {result.model && (
+                          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-indigo-500/30 text-indigo-300">
+                            {result.model}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-950/70 border border-slate-800 rounded-lg px-4 py-2 text-right">
+                      <span className="text-[10px] uppercase tracking-wider text-slate-400 block">
+                        Model Confidence
+                      </span>
+                      <span className="text-lg font-bold font-mono text-white">
+                        {Math.round(result.prediction.confidence * 100)}%
+                      </span>
                     </div>
                   </div>
 
-                  <div className="bg-slate-950/70 border border-slate-800 rounded-lg px-4 py-2 text-right">
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 block">
-                      Model Confidence
-                    </span>
-                    <span className="text-lg font-bold font-mono text-white">
-                      {Math.round(result.prediction.confidence * 100)}%
-                    </span>
+                  {/* Clear distinction: Model Confidence vs Factual Certainty */}
+                  <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 flex items-start gap-2.5">
+                    <HelpCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">
+                      <strong className="text-amber-300">Confidence Interpretation:</strong>{' '}
+                      The {Math.round(result.prediction.confidence * 100)}% score reflects statistical neural certainty across learned linguistic features, <span className="underline decoration-amber-500/50 font-semibold">not independently verified truth</span>.
+                    </div>
                   </div>
                 </div>
 
-                {/* Clear distinction: Model Confidence vs Factual Certainty */}
-                <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 flex items-start gap-2.5">
-                  <HelpCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div className="leading-relaxed">
-                    <strong className="text-amber-300">Confidence Interpretation:</strong>{' '}
-                    The {Math.round(result.prediction.confidence * 100)}% score reflects statistical neural model certainty on learned linguistic patterns, <span className="underline decoration-amber-500/50">not verified factual certainty</span>.
-                  </div>
-                </div>
-              </div>
-
-              {/* Six-Class Score Distribution */}
-              <div className="bg-[#111827] border border-slate-800 rounded-xl p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    Six-Class Veracity Distribution
-                  </h3>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    Model: {result.model}
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {ORDERED_LABELS.map((label) => {
-                    const score = result.prediction.class_scores[label] || 0;
-                    const pct = Math.round(score * 100);
-                    const isWinner = label === result.prediction.label;
-                    const cfg = LABEL_CONFIG[label];
-
-                    return (
-                      <div key={label} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span
-                            className={`font-medium ${
-                              isWinner ? `${cfg.text} font-bold flex items-center gap-1.5` : 'text-slate-400'
-                            }`}
-                          >
-                            {cfg.name}
-                            {isWinner && <CheckCircle2 className="w-3.5 h-3.5" />}
-                          </span>
-                          <span className="font-mono text-slate-300">{pct}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${cfg.barColor} transition-all duration-500`}
-                            style={{ width: `${Math.max(pct, 2)}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* External Evidence Section */}
-              <div className="bg-[#111827] border border-slate-800 rounded-xl p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-sky-400" />
+                {/* Six-Class Score Distribution */}
+                <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      External Web Evidence (Tavily Search)
+                      Six-Class Veracity Distribution
                     </h3>
+                    <span className="text-[11px] font-mono text-slate-400">
+                      Architecture: {result.model}
+                    </span>
                   </div>
-                  <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                      result.evidence?.status === 'success'
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                        : 'bg-amber-950 text-amber-400 border border-amber-800'
+
+                  <div className="space-y-2.5">
+                    {ORDERED_LABELS.map((label) => {
+                      const score = result.prediction.class_scores[label] || 0;
+                      const pct = Math.round(score * 100);
+                      const isWinner = label === result.prediction.label;
+                      const cfg = LABEL_CONFIG[label];
+
+                      return (
+                        <div key={label} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span
+                              className={`font-medium ${
+                                isWinner ? `${cfg.text} font-bold flex items-center gap-1.5` : 'text-slate-400'
+                              }`}
+                            >
+                              {cfg.name}
+                              {isWinner && <CheckCircle2 className="w-3.5 h-3.5" />}
+                            </span>
+                            <span className="font-mono text-slate-300">{pct}%</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${cfg.barColor} transition-all duration-500`}
+                              style={{ width: `${Math.max(pct, 2)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION B: EXTERNAL EVIDENCE & GROQ LLM ANALYSIS */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-mono">
+                    SECTION B
+                  </span>
+                  <span>External Evidence &amp; Groq LLM Analysis</span>
+                </div>
+
+                {/* Overall Assessment Banner */}
+                {result.evidence?.overall_assessment && (
+                  <div
+                    className={`rounded-xl border p-5 ${
+                      OVERALL_ASSESSMENT_CONFIG[result.evidence.overall_assessment]?.bg || 'bg-slate-900/60'
+                    } ${
+                      OVERALL_ASSESSMENT_CONFIG[result.evidence.overall_assessment]?.border || 'border-slate-800'
                     }`}
                   >
-                    {result.evidence?.status === 'success' ? 'Evidence Retrieved' : 'Evidence Unavailable'}
-                  </span>
-                </div>
-
-                {result.evidence?.status === 'success' && result.evidence.results.length > 0 ? (
-                  <div className="space-y-3">
-                    {result.evidence.results.map((src, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3.5 rounded-lg bg-slate-900/70 border border-slate-800/80 hover:border-slate-700 transition space-y-1.5"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <h4 className="text-xs font-semibold text-slate-200 line-clamp-1">
-                            {src.title}
-                          </h4>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 shrink-0">
-                            Relevance: {src.relevance_score.toFixed(2)}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                          {src.snippet}
-                        </p>
-                        <div className="flex items-center justify-between text-[11px] pt-1">
-                          <span className="text-slate-500 font-mono text-[10px]">{src.domain}</span>
-                          <a
-                            href={src.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 text-xs font-medium"
+                    <div className="flex items-start gap-3">
+                      {OVERALL_ASSESSMENT_CONFIG[result.evidence.overall_assessment]?.icon}
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <h4
+                            className={`text-sm font-bold uppercase tracking-wide ${
+                              OVERALL_ASSESSMENT_CONFIG[result.evidence.overall_assessment]?.text || 'text-slate-200'
+                            }`}
                           >
-                            <span>Inspect Source</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
+                            {OVERALL_ASSESSMENT_CONFIG[result.evidence.overall_assessment]?.title ||
+                              result.evidence.overall_assessment.replace('_', ' ').toUpperCase()}
+                          </h4>
+                          {result.evidence.analysis_status && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-slate-400">
+                              Groq Status: {result.evidence.analysis_status}
+                            </span>
+                          )}
                         </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          {result.evidence.analysis_summary ||
+                            OVERALL_ASSESSMENT_CONFIG[result.evidence.overall_assessment]?.description}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-lg bg-slate-900/40 border border-slate-800 text-xs text-slate-400 text-center">
-                    {result.evidence?.summary || 'No external evidence could be retrieved at this time.'}
+                    </div>
                   </div>
                 )}
+
+                {/* Retrieved Sources Breakdown */}
+                <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-sky-400" />
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                        Retrieved Sources ({result.evidence?.results?.length || 0})
+                      </h3>
+                    </div>
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                        result.evidence?.status === 'success'
+                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                          : 'bg-amber-950 text-amber-400 border border-amber-800'
+                      }`}
+                    >
+                      {result.evidence?.status === 'success' ? 'Search Completed' : 'Evidence Unavailable'}
+                    </span>
+                  </div>
+
+                  {result.evidence?.status === 'success' && result.evidence.results.length > 0 ? (
+                    <div className="space-y-4">
+                      {result.evidence.results.map((src, idx) => {
+                        const rel = src.classification || 'unclassified';
+                        const relCfg = RELATIONSHIP_CONFIG[rel] || RELATIONSHIP_CONFIG.unclassified;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="p-4 rounded-lg bg-slate-900/70 border border-slate-800/80 hover:border-slate-700 transition space-y-2.5"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="space-y-1 flex-1">
+                                <h4 className="text-xs font-semibold text-slate-200 leading-snug">
+                                  {src.title}
+                                </h4>
+                                <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
+                                  <span className="font-mono text-slate-400">{src.domain}</span>
+                                  {src.published_date && (
+                                    <span className="flex items-center gap-1 text-slate-500">
+                                      <Calendar className="w-3 h-3" />
+                                      {src.published_date}
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] font-mono text-slate-500">
+                                    Relevance: {src.relevance_score.toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Relationship Badge */}
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <span
+                                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${relCfg.bg} ${relCfg.text} ${relCfg.border}`}
+                                >
+                                  {relCfg.label}
+                                </span>
+                                {src.relevance && (
+                                  <span className="text-[9px] font-mono uppercase text-slate-400">
+                                    {src.relevance} relevance
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Reasoning */}
+                            {src.reasoning && (
+                              <div className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                                <span className="font-semibold text-indigo-300 text-[11px]">Analysis: </span>
+                                {src.reasoning}
+                              </div>
+                            )}
+
+                            {/* Verified Evidence Quote */}
+                            {src.evidence_quote && (
+                              <div className="text-[11px] text-slate-300 leading-relaxed bg-indigo-950/20 border-l-2 border-indigo-500 px-3 py-1.5 rounded-r flex items-start gap-2">
+                                <Quote className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[10px] uppercase font-bold text-indigo-400 block mb-0.5">
+                                    Verified Source Excerpt:
+                                  </span>
+                                  <span className="italic font-serif">"{src.evidence_quote}"</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Original Snippet if no reasoning/quote */}
+                            {!src.reasoning && !src.evidence_quote && (
+                              <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                                {src.snippet}
+                              </p>
+                            )}
+
+                            <div className="flex items-center justify-end text-[11px] pt-1 border-t border-slate-800/40">
+                              <a
+                                href={src.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 text-xs font-medium"
+                              >
+                                <span>Inspect Source URL</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-lg bg-slate-900/40 border border-slate-800 text-xs text-slate-400 text-center">
+                      {result.evidence?.summary || 'No external evidence could be retrieved at this time.'}
+                    </div>
+                  )}
+
+                  {/* Methodological Limitations */}
+                  {result.evidence?.limitations && result.evidence.limitations.length > 0 && (
+                    <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Evidence Caveats &amp; Limitations</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-slate-400 pl-4 list-disc">
+                        {result.evidence.limitations.map((lim, lIdx) => (
+                          <li key={lIdx}>{lim}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Academic Disclaimer */}

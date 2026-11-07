@@ -76,3 +76,8 @@ Thumbs.db
 /datasets/*.json
 !/datasets/.gitkeep
 !/models/.gitkeep
+
+# Temporary scratch scripts & artifacts
+scratch/
+backend/scratch/
+

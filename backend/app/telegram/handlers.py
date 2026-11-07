@@ -25,7 +25,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     welcome_text = (
         "Welcome to TruthLens!\n\n"
         "TruthLens is an NLP-based fake news analysis system that evaluates claims "
-        "using a fine-tuned RoBERTa model and external web search.\n\n"
+        "using a fine-tuned RoBERTa model (upgraded to DeBERTa-v3), Tavily external web search, and Groq LLM evidence analysis.\n\n"
         "Send me a claim or statement to begin."
     )
     if update.message:
@@ -38,9 +38,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "📖 TRUTHLENS USER GUIDE\n\n"
         "How to Submit a Claim:\n"
         "Simply type or paste any news claim, political statement, or assertion into this chat.\n\n"
-        "How Evidence is Retrieved:\n"
-        "TruthLens calls the Tavily Search API to retrieve up to 5 relevant external web sources "
-        "to give you immediate factual context.\n\n"
+        "How Evidence is Retrieved & Analyzed:\n"
+        "TruthLens queries the Tavily Search API for relevant web sources and utilizes Groq LLM "
+        "to evaluate whether each source supports, contradicts, or remains neutral toward your claim.\n\n"
         "The 6 Truthfulness Labels:\n"
         "• Pants-fire: Completely false, ridiculous fabrication with no basis in fact.\n"
         "• False: The statement is not accurate.\n"
@@ -49,8 +49,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "• Mostly-true: Accurate, but needs minor clarification or additional details.\n"
         "• True: The statement is accurate and nothing significant is omitted.\n\n"
         "System Limitations:\n"
-        "• Model predictions reflect linguistic and stylistic patterns learned from the LIAR benchmark.\n"
-        "• Predictions are neural estimates, not verified fact-checking determinations.\n"
+        "• Model predictions reflect linguistic patterns learned from the LIAR benchmark.\n"
+        "• Predictions and LLM evidence assessments are automated estimates, not guaranteed fact-checking determinations.\n"
         "• External search results should always be independently inspected."
     )
     if update.message:
@@ -64,14 +64,15 @@ async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "Project: TruthLens – An NLP-Based Fake News Detection and Robustness Evaluation System\n\n"
         "Architecture & Tech Stack:\n"
         "• Backend: FastAPI (Python 3.10+)\n"
-        "• Neural Model: Fine-tuned RoBERTa-base (soah-13/truthlens-roberta-liar-meta)\n"
+        "• Neural Model: Fine-tuned DeBERTa-v3-base (soah-13/truthlens-deberta-v3-liar, benchmarked with soah-13/truthlens-roberta-liar-meta)\n"
+        "• Evidence Analysis: Groq LLM (Grounded source assessment)\n"
+        "• External Search: Tavily Search API\n"
         "• Training Benchmark: LIAR Dataset (12,800+ statements, 6 canonical veracity classes)\n"
         "• Input Formulation: Sentence-pair format (statement + speaker/context metadata)\n"
-        "• External Evidence: Tavily Search API\n"
         "• Interfaces: Telegram Bot & React Dashboard\n\n"
         "Academic Objective:\n"
         "To provide calibrated claim veracity analysis while empirically testing neural robustness "
-        "against adversarial textual manipulations."
+        "and grounding claims in verified external evidence."
     )
     if update.message:
         await update.message.reply_text(about_text)

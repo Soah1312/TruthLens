@@ -26,7 +26,7 @@ LABEL_LIST = [
 LABEL2ID = {label: i for i, label in enumerate(LABEL_LIST)}
 ID2LABEL = {i: label for i, label in enumerate(LABEL_LIST)}
 
-MODEL_IDENTIFIER = "RoBERTa + Metadata"
+MODEL_IDENTIFIER = "DeBERTa-v3 + Metadata"
 DEFAULT_DISCLAIMER = "This is a model prediction, not independent factual verification."
 
 

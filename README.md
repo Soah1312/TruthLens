@@ -4,50 +4,43 @@
 [![React](https://img.shields.io/badge/Frontend-React_18_%2B_Vite-61DAFB.svg?style=flat&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5-3178C6.svg?style=flat&logo=typescript)](https://www.typescriptlang.org)
 [![Python](https://img.shields.io/badge/Language-Python_3.10%2F3.11-3776AB.svg?style=flat&logo=python)](https://www.python.org)
-[![Transformers](https://img.shields.io/badge/Model-DistilBERT-FF6F00.svg?style=flat&logo=huggingface)](https://huggingface.co/distilbert-base-uncased)
-[![Colab GPU](https://img.shields.io/badge/Training-Google_Colab_GPU-F9AB00.svg?style=flat&logo=googlecolab)](https://colab.research.google.com)
+[![Transformers](https://img.shields.io/badge/Model-DeBERTa--v3--base-FF6F00.svg?style=flat&logo=huggingface)](https://huggingface.co/soah-13/truthlens-deberta-v3-liar)
+[![Groq](https://img.shields.io/badge/LLM-Groq_API-F55036.svg?style=flat)](https://groq.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
 ## 1. Project Overview
 
-**TruthLens** is an academic engineering and research platform designed to automate fake news detection and evaluate the robustness of transformer-based language models against adversarial textual noise.
+**TruthLens** is an academic research and engineering system designed to combine neural claim classification with structured, source-grounded external evidence assessment.
 
-The end-to-end system allows users to submit news articles (via raw text or web URLs) through an asynchronous **Telegram bot**. The system extracts clean article content, runs semantic classification through a fine-tuned **DistilBERT** transformer model, validates facts against live web evidence gathered via the **Tavily Search API**, stress-tests predictions against textual perturbations, and visualizes comprehensive model performance and robustness metrics via an interactive web dashboard.
-
----
-
-## 2. Problem Statement
-
-The rapid proliferation of digital misinformation presents a major threat to democratic discourse, public health, and societal cohesion. While automated natural language processing (NLP) models have shown promise in classifying deceptive text, existing solutions suffer from three fundamental limitations:
-
-1. **Vulnerability to Textual Noise & Paraphrasing**: State-of-the-art neural classifiers frequently fail or flip predictions when subjected to simple typos, character swaps, synonym substitutions, or slight grammatical alterations that do not change semantic truth.
-2. **Lack of Grounded Evidence**: Black-box classification scores provide zero real-world factual context, leaving users unable to verify *why* a statement is deemed false.
-3. **Accessibility Barriers**: Advanced verification tools are rarely accessible where misinformation spreads fastest — messaging apps and mobile communication channels.
-
-**TruthLens** addresses these gaps by coupling fine-tuned transformer classification with dynamic external web search evidence and formal adversarial perturbation benchmarking.
+The tripartite system integrates:
+1. **DeBERTa-v3-base** (`soah-13/truthlens-deberta-v3-liar`): 6-class neural truthfulness classification fine-tuned on the LIAR benchmark.
+2. **Tavily Search API**: Real-time retrieval of corroborating external web news articles and source passages.
+3. **Groq LLM Evidence Analysis** (`openai/gpt-oss-120b`): Grounded, source-level relationship reasoning (`supports`, `contradicts`, `neutral`), verbatim quotation verification, and transparent overall verdict determination.
 
 ---
 
-## 3. Project Objectives
+## 2. Tripartite Architecture
 
-- **Develop a High-Accuracy NLP Classifier**: Fine-tune a lightweight transformer architecture (`distilbert-base-uncased`) on the benchmark LIAR dataset for multi-class credibility scoring across 6 truthfulness levels (`pants-fire`, `false`, `barely-true`, `half-true`, `mostly-true`, `true`).
-- **Leverage Cloud GPU Acceleration**: Execute all compute-intensive model training on Google Colab GPU (T4), producing portable model weights and evaluation artifacts.
-- **Provide Real-Time Fact Grounding**: Integrate automated article extraction (Trafilatura) and live web evidence retrieval (Tavily API) in subsequent phases to accompany predictions with corroborating sources.
-- **Empirically Benchmark Model Robustness**: Subject the model to targeted adversarial perturbations (typos, synonym replacement, paraphrasing, negation injection) in Phase 4 to quantify prediction consistency.
-- **Deliver an Omnichannel User Experience**: Provide an accessible Telegram intake bot alongside a professional research dashboard for evaluating model performance and robustness.
+- **DeBERTa-v3**: Evaluates semantic and stylistic statement signals paired with optional metadata (`speaker`, `context`).
+- **Tavily Search**: Retrieves external sources without automated veracity bias.
+- **Groq LLM**: Evaluates each retrieved source independently against the submitted claim, verifying quotations directly against source passages.
+
+> **Crucial Academic Caveat**: Model confidence reflects statistical certainty on learned linguistic patterns, and Groq performs automated evidence assessment across retrieved passages. Neither constitutes independently guaranteed factual verification.
 
 ---
 
-## 4. Technology Stack
+## 3. Technology Stack
 
 ### Backend
 - **Language**: Python 3.10 / 3.11
-- **API Framework**: FastAPI
-- **ASGI Server**: Uvicorn
+- **API Framework**: FastAPI & Uvicorn
 - **Data Validation & Settings**: Pydantic v2 & Pydantic-Settings
-- **ORM & Database**: SQLAlchemy 2.0 with SQLite (for initial development)
+- **Neural Classification**: Hugging Face Transformers & PyTorch (`microsoft/deberta-v3-base`)
+- **External Search**: Tavily Search API
+- **Evidence Analysis**: Groq Python SDK (`openai/gpt-oss-120b`)
+- **Telegram Bot**: `python-telegram-bot` v20+
 - **Unit & Integration Testing**: Pytest, HTTPX
 
 ### Frontend
@@ -57,17 +50,9 @@ The rapid proliferation of digital misinformation presents a major threat to dem
 - **Icons**: Lucide React
 - **Data Visualization**: Recharts
 
-### Machine Learning & Data (Phase 2)
-- **Framework**: PyTorch
-- **Transformers**: Hugging Face Transformers (`distilbert-base-uncased`)
-- **Evaluation**: Scikit-Learn (Accuracy, Macro Precision, Macro Recall, Macro F1, Weighted F1, Confusion Matrix)
-- **Dataset**: LIAR benchmark dataset (William Yang Wang, ACL 2017)
-- **Training Environment**: Google Colab GPU (T4 accelerator)
-- **Model Hosting & Distribution**: Hugging Face Hub / Local ZIP export
-
 ---
 
-## 5. Project Directory Structure
+## 4. Project Directory Structure
 
 ```
 truthlens/
@@ -77,16 +62,21 @@ truthlens/
 │   │   ├── api/
 │   │   │   └── routes/
 │   │   │       ├── health.py          # GET /api/health (System health)
-│   │   │       ├── analyze.py         # POST /api/analyze (RoBERTa 6-class claim + Tavily evidence)
-│   │   │       ├── predict.py         # POST /api/predict (Legacy backwards-compatible endpoint)
+│   │   │       ├── analyze.py         # POST /api/analyze (DeBERTa + Tavily + Groq evidence pipeline)
 │   │   │       └── metrics.py         # GET /api/model/metrics (Benchmark metrics)
 │   │   ├── core/
-│   │   │   └── config.py              # Pydantic v2 environment settings
-│   │   ├── database/
-│   │   │   └── database.py            # SQLAlchemy SQLite connection setup
+│   │   │   └── config.py              # Pydantic v2 settings (Groq, Tavily, HF)
 │   │   ├── services/
-│   │   │   ├── classifier.py          # Singleton fine-tuned RoBERTa + Metadata inference service
-│   │   │   └── evidence.py            # Tavily Search API external web evidence retrieval service
+│   │   │   ├── classifier.py          # DeBERTa-v3 + Metadata inference service
+│   │   │   ├── evidence.py            # Tavily external search retrieval service
+│   │   │   └── evidence_analyzer.py   # Groq LLM grounded evidence analysis service
+│   │   ├── telegram/
+│   │   │   ├── bot.py                 # Telegram bot runner
+│   │   │   ├── handlers.py            # Command & intake handlers
+│   │   │   └── formatter.py           # Structured Telegram card formatter
+│   │   ├── schemas/
+│   │   │   └── analyze.py             # Analyze request/response & evidence payload contracts
+│   │   └── main.py                    # FastAPI application initialization & CORS
 │   │   ├── telegram/
 │   │   │   ├── bot.py                 # python-telegram-bot application builder & polling runner
 │   │   │   ├── handlers.py            # Telegram command (/start, /help, /about) & claim intake handlers

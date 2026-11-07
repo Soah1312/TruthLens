@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     TAVILY_MAX_RESULTS: int = 5
     TAVILY_TIMEOUT_SECONDS: float = 10.0
 
+    # Groq LLM Evidence Analysis Configuration
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
+    GROQ_TIMEOUT_SECONDS: float = 30.0
+    GROQ_MAX_RETRIES: int = 2
+    GROQ_MAX_SOURCES: int = 5
+    GROQ_MAX_PASSAGE_CHARS: int = 1500
+
     # Telegram Bot Configuration (Phase 3C & Final Webhook)
     TELEGRAM_BOT_TOKEN: Optional[str] = None
     TELEGRAM_WEBHOOK_SECRET: Optional[str] = None

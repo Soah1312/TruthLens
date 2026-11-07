@@ -79,13 +79,26 @@ export type VeracityLabel =
   | 'mostly-true'
   | 'true';
 
+export interface SourceAssessment {
+  source_id: string;
+  relationship: 'supports' | 'contradicts' | 'neutral';
+  relevance: 'high' | 'medium' | 'low';
+  reasoning: string;
+  evidence_quote?: string | null;
+}
+
 export interface EvidenceSource {
+  source_id?: string | null;
   title: string;
   url: string;
   domain: string;
   snippet: string;
   relevance_score: number;
   published_date?: string | null;
+  classification?: 'supports' | 'contradicts' | 'neutral' | 'unclassified';
+  relevance?: 'high' | 'medium' | 'low' | null;
+  reasoning?: string | null;
+  evidence_quote?: string | null;
 }
 
 export interface EvidenceData {
@@ -93,6 +106,12 @@ export interface EvidenceData {
   query: string;
   results: EvidenceSource[];
   summary: string;
+  error?: string | null;
+  overall_assessment?: 'supports' | 'contradicts' | 'mixed' | 'insufficient_evidence' | null;
+  analysis_status?: 'completed' | 'unavailable' | 'failed' | 'skipped' | null;
+  analysis_summary?: string | null;
+  limitations?: string[];
+  source_assessments?: SourceAssessment[];
 }
 
 export interface AnalyzePrediction {
