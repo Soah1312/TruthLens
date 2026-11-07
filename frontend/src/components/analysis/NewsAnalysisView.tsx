@@ -287,10 +287,15 @@ export const NewsAnalysisView: React.FC = () => {
                     <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block mb-0.5">
                       Predicted Classification
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5 flex-wrap">
                       <span className={`text-2xl font-extrabold ${predConfig?.text} uppercase tracking-tight`}>
                         {result.prediction.label}
                       </span>
+                      {result.model && (
+                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-indigo-500/30 text-indigo-300">
+                          {result.model}
+                        </span>
+                      )}
                     </div>
                   </div>
 
