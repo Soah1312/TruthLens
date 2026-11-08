@@ -156,7 +156,7 @@ Evaluates a text statement and optionally retrieves and analyzes external eviden
 # Install dependencies
 pip install -r backend/requirements.txt
 
-# Run all backend tests (57 tests)
+# Run all backend tests (74 tests passing)
 pytest backend/tests/ -v
 
 # Run Groq evidence analyzer tests specifically

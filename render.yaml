@@ -15,9 +15,13 @@ services:
       - key: MODEL_SOURCE
         value: huggingface
       - key: HF_MODEL_REPO
-        value: soah-13/truthlens-roberta-liar-meta
+        value: soah-13/truthlens-deberta-v3-liar
       - key: HF_TOKEN
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
       - key: TAVILY_API_KEY
         sync: false
       - key: TAVILY_SEARCH_DEPTH

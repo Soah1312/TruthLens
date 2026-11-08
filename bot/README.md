@@ -1,7 +1,7 @@
 # TruthLens — Telegram Bot Service
 
 ## Overview
-The TruthLens Telegram bot allows users to submit statements and claims directly through Telegram, executing fine-tuned RoBERTa-base credibility classification with sentence-pair metadata inputs and retrieving real-time external web evidence via the Tavily Search API.
+The TruthLens Telegram bot allows users to submit statements and claims directly through Telegram, executing fine-tuned DeBERTa-v3 credibility classification with sentence-pair metadata inputs, retrieving real-time external web evidence via the Tavily Search API, and synthesizing grounded evidence stances via Groq LLM.
 
 - **Bot Username**: `@TruthLensNewsBot`
 - **Supported Commands**: `/start`, `/help`, `/about`

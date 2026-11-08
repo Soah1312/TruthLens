@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000 \
     ENVIRONMENT=production \
     MODEL_SOURCE=huggingface \
-    HF_MODEL_REPO=soah-13/truthlens-roberta-liar-meta
+    HF_MODEL_REPO=soah-13/truthlens-deberta-v3-liar
 
 # Install runtime utilities and build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \

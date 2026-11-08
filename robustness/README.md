@@ -4,7 +4,7 @@
 This directory is reserved for the adversarial perturbation and robustness assessment suite, scheduled for implementation in **Phase 4**.
 
 ## Planned Scope (Phase 4)
-- **Objective**: Measure how stably the fine-tuned DistilBERT model performs under adversarial text noise and natural linguistic variations.
+- **Objective**: Measure how stably the fine-tuned transformer models (DeBERTa-v3 / RoBERTa) perform under adversarial text noise and natural linguistic variations.
 - **Perturbation Attacks**:
   - Typographical noise (character swap, deletion, insertion).
   - Synonym replacement (context-preserving word substitution).

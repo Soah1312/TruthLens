@@ -1,94 +1,92 @@
-# TruthLens — Phase 2: DistilBERT Model Training & Evaluation
+# TruthLens — Model Training & Experimental Evaluation
 
 ## Overview
-Phase 2 implements the core Natural Language Processing (NLP) claim-classification baseline using `distilbert-base-uncased` fine-tuned on the benchmark LIAR dataset.
+This directory houses the dataset ingestion, baseline modeling, and training scripts for the **TruthLens** misinformation classification benchmark.
 
-All actual neural network training takes place in the cloud using **Google Colab's GPU** (e.g., NVIDIA T4), preserving local computing resources while ensuring rapid, reproducible model convergence.
+All neural network fine-tuning was executed using GPU-accelerated cloud infrastructure (**Google Colab NVIDIA T4 GPU**), preserving local compute while ensuring reproducible, hardware-accelerated convergence.
 
 ---
 
-## 1. Dataset Specification: LIAR Benchmark
-- **Source**: William Yang Wang, *"Liar, Liar Pants on Fire: A New Benchmark Dataset for Fake News Detection"*, ACL 2017.
+## 1. Benchmark Dataset: LIAR (ACL 2017)
+- **Source**: William Yang Wang, *"Liar, Liar Pants on Fire: A New Benchmark Dataset for Fake News Detection"*, Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (ACL 2017).
 - **Location**: `datasets/liar/` (`train.tsv`, `valid.tsv`, `test.tsv`).
-- **Splits Preserved**:
+- **Data Splits**:
   - **Train**: 10,240 statements
   - **Validation**: 1,284 statements
   - **Test**: 1,267 statements
-- **6 Fine-Grained Veracity Labels**:
+- **6 Fine-Grained Veracity Classes**:
   0. `pants-fire`
   1. `false`
   2. `barely-true`
   3. `half-true`
   4. `mostly-true`
   5. `true`
-  *(All 6 classes are preserved without binary collapsing).*
-- **Tokenization**: `DistilBertTokenizerFast` (`max_length=128`).
-- **Zero Destructive Cleaning Policy**: Traditional stemming, lemmatization, and stopword pruning are explicitly avoided to retain complete contextual semantics for self-attention.
+  *(All 6 classes are strictly preserved without lossy binary collapsing).*
+- **Text Representation**:
+  - **Sentence-Pair Formulation**:
+    $$\text{Sequence A} = \text{Statement}$$
+    $$\text{Sequence B} = \text{"Speaker: } \langle\text{speaker}\rangle \text{ | Context: } \langle\text{context}\rangle\text{"}$$
+- **Zero Destructive Cleaning Policy**: Traditional aggressive stemming, lemmatization, and stopword pruning are avoided to preserve syntax, sentiment cues, and contextual self-attention dynamics.
 
 ---
 
-## 2. Reusable Training & Evaluation Scripts
+## 2. Experimental Progression & Benchmarking Summary
+
+Across four structured experimental iterations, we evaluated progressively sophisticated architectures and feature representations:
+
+| Experiment | Model Architecture | Input Features | Objective / Regularization | Test Accuracy | Test Macro-F1 |
+|:---|:---|:---|:---|:---:|:---:|
+| **Exp 1: Baseline** | TF-IDF + Logistic Regression | Statement unigrams/bigrams | Standard Cross-Entropy | 24.39% | 23.82% |
+| **Exp 2: DistilBERT** | `distilbert-base-uncased` | Statement only | AdamW, lr 2e-5, CE | 27.52% | 27.18% |
+| **Exp 3: RoBERTa** | `roberta-base` | Statement + Speaker/Context Metadata | Sentence-pair + Label Smoothing (0.1) | 28.41% | 28.39% |
+| **Exp 4: DeBERTa-v3 (Latest)** | `microsoft/deberta-v3-base` | Statement + Metadata (Seq A + B) | Disentangled Attention + RTD + AdamW | **29.52%** | **29.62%** |
+
+*Note: On the 6-class LIAR benchmark, human agreement averages 25%–30%, establishing DeBERTa-v3 as a highly competitive statistical prior.*
+
+---
+
+## 3. Standalone Training & Evaluation Scripts
 
 | Script | Purpose | Execution |
 |:---|:---|:---|
-| [`training/preprocess.py`](file:///c:/Users/soahf/Desktop/NLP_NEWS/training/preprocess.py) | Ingests, validates, and reports class distributions for the LIAR TSV splits. | `python training/preprocess.py` |
-| [`training/baseline.py`](file:///c:/Users/soahf/Desktop/NLP_NEWS/training/baseline.py) | Trains a TF-IDF + Logistic Regression benchmark on train split and evaluates on test. | `python training/baseline.py` |
-| [`training/train.py`](file:///c:/Users/soahf/Desktop/NLP_NEWS/training/train.py) | Standalone PyTorch fine-tuning script with AdamW, learning rate warmup, and checkpointing. | `python training/train.py --epochs 3 --lr 2e-5` |
-| [`training/evaluate.py`](file:///c:/Users/soahf/Desktop/NLP_NEWS/training/evaluate.py) | Computes accuracy, macro/weighted F1, confusion matrix, and classification report. | `python training/evaluate.py` |
+| [`preprocess.py`](preprocess.py) | Ingests, validates, and reports class distributions for the LIAR TSV splits. | `python training/preprocess.py` |
+| [`baseline.py`](baseline.py) | Trains a TF-IDF + Logistic Regression benchmark on train split and evaluates on test. | `python training/baseline.py` |
+| [`train.py`](train.py) | Standalone PyTorch fine-tuning script with AdamW, learning rate warmup, and checkpointing. | `python training/train.py --epochs 3 --lr 2e-5` |
+| [`evaluate.py`](evaluate.py) | Computes accuracy, macro/weighted F1, confusion matrix, and classification report. | `python training/evaluate.py` |
 
 ---
 
-## 3. Google Colab Training Workflow
+## 4. Latest Google Colab Training Notebook
 
-The primary training interface is the complete self-contained notebook:
-[`training/TruthLens_Phase2_Colab.ipynb`](file:///c:/Users/soahf/Desktop/NLP_NEWS/training/TruthLens_Phase2_Colab.ipynb)
+The primary, end-to-end reproducible training workflow for the latest and highest-performing model is:
+
+**[`TruthLens_Experiment_4_DeBERTa_v3_Base.ipynb`](../TruthLens_Experiment_4_DeBERTa_v3_Base.ipynb)**
 
 ### Step-by-Step Execution Guide:
 1. **Open Google Colab**: Navigate to [https://colab.research.google.com/](https://colab.research.google.com/).
-2. **Upload Notebook**: Click **Upload** and select `training/TruthLens_Phase2_Colab.ipynb` from your local project repository.
-3. **Select GPU Hardware Accelerator**:
-   - In Colab menu: **Runtime** &rarr; **Change runtime type** &rarr; select **T4 GPU** (or any available GPU).
+2. **Upload Notebook**: Click **Upload** and select `TruthLens_Experiment_4_DeBERTa_v3_Base.ipynb` from the root directory of this repository.
+3. **Select GPU Accelerator**:
+   - In Colab menu: **Runtime** &rarr; **Change runtime type** &rarr; select **T4 GPU** (or any available CUDA accelerator).
 4. **Execute Top to Bottom**:
    - Run **Runtime** &rarr; **Run all** (or step through Section 1 to Section 10).
-   - Training 3 epochs on a T4 GPU takes approximately **4 to 6 minutes**.
+   - Training 4 epochs on an NVIDIA T4 GPU takes approximately **10 to 14 minutes**.
 5. **Inspect Benchmark Results**:
-   - Section 4 outputs the TF-IDF + Logistic Regression baseline results.
-   - Section 6 outputs the DistilBERT test set accuracy, per-class metrics, and confusion matrix.
-   - Section 7 renders the empirical comparison table.
-6. **Export & Download Trained Model**:
-   - Section 8 exports the weights, tokenizer, and `metrics.json` into `truthlens-distilbert-liar.zip` and triggers automatic browser download.
-7. **(Optional) Hugging Face Hub Upload**:
-   - Section 9 allows automatic authenticated upload to your Hugging Face profile using your `HF_TOKEN` from Colab Secrets or a prompt.
+   - Section 6 computes test set accuracy, per-class metrics, and generates the seaborn confusion matrix.
+   - Section 7 renders the cross-experiment comparative analysis.
+6. **Export & Model Deployment**:
+   - Section 8 exports `evaluation_results.json` into `models/deberta-v3-liar/`.
+   - Section 9 provides direct, authenticated Hugging Face Hub publication to `soah-13/truthlens-deberta-v3-liar`.
 
 ---
 
-## 4. Connecting Trained Model to Local Backend
+## 5. Integrating the Trained Checkpoint with Backend
 
-After Colab training completes, you can enable local inference using either method:
+The FastAPI backend automatically pulls the latest fine-tuned checkpoint from Hugging Face Hub:
 
-### Option A: Local Model Directory
-1. Unzip `truthlens-distilbert-liar.zip`.
-2. Move the extracted folder contents (`config.json`, `model.safetensors` or `pytorch_model.bin`, `tokenizer.json`, `metrics.json`) into:
-   ```
-   models/distilbert-liar/
-   ```
-3. In `backend/.env`, ensure:
-   ```bash
-   MODEL_SOURCE="local"
-   LOCAL_MODEL_PATH="models/distilbert-liar"
-   METRICS_FILE_PATH="models/distilbert-liar/metrics.json"
-   ```
+```env
+MODEL_SOURCE="huggingface"
+HF_MODEL_REPO="soah-13/truthlens-deberta-v3-liar"
+METRICS_FILE_PATH="models/deberta-v3-liar/evaluation_results.json"
+```
 
-### Option B: Hugging Face Hub
-1. If you ran Section 9 in Colab, your model is published on Hugging Face (e.g. `username/truthlens-distilbert-liar`).
-2. In `backend/.env`, set:
-   ```bash
-   MODEL_SOURCE="huggingface"
-   HF_MODEL_REPO="your-username/truthlens-distilbert-liar"
-   ```
-
----
-
-## 5. Backend Endpoints (Phase 2)
-- **POST `/api/predict`**: Accepts `{"text": "Political claim..."}` and returns the predicted label, confidence, and full 6-class probability distribution. Returns `HTTP 503` if model weights are not loaded.
-- **GET `/api/model/metrics`**: Returns evaluated test accuracy, macro precision, recall, macro F1, and baseline comparison. Connected directly to the frontend Model Performance dashboard.
+For offline local execution, unpack the trained model directory into `models/deberta-v3-liar` and configure `MODEL_SOURCE="local"`.
